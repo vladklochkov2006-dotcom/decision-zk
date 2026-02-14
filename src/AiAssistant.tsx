@@ -43,7 +43,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({
     const handleQuickAction = (action: 'risks' | 'privacy' | 'aleo') => {
         const actionMap = {
             risks: { user: "Analyze Risks", ai: "Analyzing smart contract... No vulnerabilities found. The proposal is safe to execute." },
-            privacy: { user: "Privacy Audit", ai: "We use ZK-proofs (Groth16). Your identity remains hidden, but your vote is mathematically accounted for." },
+            privacy: { user: "Privacy Audit", ai: "We use Aleo's Varuna proof system (Marlin-based) Your identity remains hidden, but your vote is mathematically accounted for." },
             aleo: { user: "Aleo Advantage", ai: "Aleo is the only L1 that provides programmable privacy. By using ZK-proofs at the protocol level, we ensure that your governance decisions are truly decentralized and cryptographically shielded. This project leverages Aleo's unique architecture to solve the bias problem in modern DAOs." }
         };
 
