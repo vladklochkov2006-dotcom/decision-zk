@@ -1,0 +1,179 @@
+/* Vote Confirmation Card */
+.vote-confirmation-card {
+    background: rgba(0, 255, 157, 0.05);
+    border: 1px solid rgba(0, 255, 157, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 15px;
+    animation: slideIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.vote-conf-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+
+.vote-lock-badge {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 255, 157, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00ff9d;
+}
+
+.vote-conf-title h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.vote-conf-title p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #dfdfdf;
+}
+
+/* Row Styles */
+.vote-conf-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.conf-label {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+/* Choice Bar */
+.conf-value-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.conf-choice-text {
+    color: #00ff9d;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.conf-bar-fill {
+    width: 8px;
+    height: 20px;
+    background: #00ff9d;
+    opacity: 0.8;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(0, 255, 157, 0.5);
+}
+
+/* Proof Toggle Button */
+.proof-toggle-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    color: #00ff9d;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.proof-toggle-btn:hover {
+    background: rgba(0, 255, 157, 0.1);
+    border-color: #00ff9d;
+}
+
+/* Proof Display Box */
+.proof-display-box {
+    background: #050505;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #00ff9d;
+    word-break: break-all;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    margin-top: -5px;
+}
+
+.proof-display-box:hover {
+    background: #0a0a0a;
+    border-color: rgba(0, 255, 157, 0.3);
+}
+
+.proof-hash-text {
+    display: block;
+    line-height: 1.4;
+    max-height: 60px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+}
+
+/* Copy Feedback */
+.copy-feedback {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #00ff9d;
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Try Again Button (Visual) */
+.try-again-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: not-allowed;
+    /* Disabled for now as logic isn't wired */
+    font-size: 0.9rem;
+    width: 100%;
+    margin-top: 5px;
+    transition: all 0.2s;
+}
+
+.try-again-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}

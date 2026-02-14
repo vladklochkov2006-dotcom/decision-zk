@@ -1,0 +1,383 @@
+.wallet-menu-container {
+    position: relative;
+    user-select: none;
+    z-index: 99999;
+    width: 100%;
+    /* Take full width of parent to allow centering */
+    display: flex;
+    justify-content: center;
+}
+
+/* TRIGGER BADGE STYLING */
+.wallet-badge-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(10, 10, 12, 0.95);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    /* Native cyan border */
+    padding: 8px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.1);
+    margin: 0 auto;
+}
+
+.wallet-badge-trigger:hover {
+    background: rgba(0, 217, 255, 0.05);
+    border-color: #00D9FF;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+}
+
+.wallet-badge-trigger.active {
+    background: rgba(0, 217, 255, 0.08);
+    border-color: #00D9FF;
+    box-shadow: 0 0 25px rgba(0, 217, 255, 0.3), inset 0 0 10px rgba(0, 217, 255, 0.1);
+}
+
+.online-indicator {
+    width: 6px;
+    height: 6px;
+    background: #00FF88;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+}
+
+.wallet-badge-trigger .addr {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.wallet-badge-trigger .sep {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.wallet-badge-trigger .bal {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #00D9FF;
+    /* Native accented color */
+}
+
+.wallet-badge-trigger .arrow {
+    margin-left: 4px;
+    color: #555;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wallet-badge-trigger .arrow.rotated {
+    transform: rotate(180deg);
+}
+
+/* PREMIUM DROPDOWN */
+.wallet-premium-dropdown {
+    position: absolute;
+    top: calc(100% + 16px);
+    left: 50%;
+    /* Center the dropdown relative to the trigger */
+    transform: translateX(-50%);
+    width: 300px;
+    background: #08080a;
+    /* Deep solid native background */
+    border: 1px solid rgba(0, 217, 255, 0.4);
+    /* Glow effect */
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 217, 255, 0.1);
+    backdrop-filter: blur(50px);
+    animation: dropdownEntrance 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 999999;
+}
+
+@keyframes dropdownEntrance {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+.dropdown-inner {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* HEADER SECTION */
+.wallet-header-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wallet-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon-box {
+    width: 42px;
+    height: 42px;
+    background: rgba(0, 217, 255, 0.05);
+    border: 1px solid rgba(0, 217, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.brand-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-meta .name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.brand-meta .net {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #00D9FF;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.interactive-address {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.interactive-address:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(0, 217, 255, 0.3);
+}
+
+.interactive-address code {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.copy-icon {
+    color: #555;
+}
+
+.copy-success {
+    color: #00FF88;
+}
+
+/* BALANCE PANEL */
+.balance-panel {
+    background: rgba(0, 217, 255, 0.02);
+    /* Subtle glow interior */
+    border: 1px solid rgba(0, 217, 255, 0.08);
+    border-radius: 18px;
+    padding: 20px;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.panel-header .label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #666;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.refresh-action {
+    background: transparent;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-action:hover {
+    color: #00D9FF;
+}
+
+.total-amount {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    letter-spacing: -1px;
+}
+
+.total-amount .currency {
+    font-size: 1rem;
+    color: #00D9FF;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.balance-row {
+    display: flex;
+    gap: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 24px;
+}
+
+.balance-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.col-label {
+    font-size: 0.75rem;
+    color: #555;
+    font-weight: 600;
+}
+
+.col-value {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.col-value.private {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #00FF88;
+    /* Green for private success */
+}
+
+.lock-icon {
+    color: #444;
+}
+
+.lock-icon.green {
+    color: #00FF88;
+}
+
+.dim {
+    color: #444;
+}
+
+/* SHIELD BUTTON - NATIVE GRADIENT */
+.shield-assets-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #00D9FF 0%, #A855F7 100%);
+    /* Project's primary gradient */
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    color: #fff;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+}
+
+.shield-assets-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 217, 255, 0.5), 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+.shield-assets-btn:active {
+    transform: translateY(0);
+}
+
+.shield-assets-btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* ACTIONS LIST */
+.wallet-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.action-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #999;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.action-row:hover {
+    background: rgba(0, 217, 255, 0.05);
+    border-color: rgba(0, 217, 255, 0.1);
+    color: #fff;
+}
+
+.action-row.disconnect {
+    color: #FF4B4B;
+}
+
+.action-row.disconnect:hover {
+    background: rgba(255, 75, 75, 0.05);
+    border-color: rgba(255, 75, 75, 0.1);
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

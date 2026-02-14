@@ -1,0 +1,46 @@
+/* PREMIUM TYPOGRAPHY IMPORTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+
+  /* Premium Color System */
+  --bg-deep: #020203;
+  --accent-blue: #00D9FF;
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-deep);
+  scroll-behavior: smooth;
+  /* Smooth scroll for landing page */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  /* Allow vertical scroll, prevent horizontal */
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
