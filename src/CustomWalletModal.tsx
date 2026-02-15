@@ -11,16 +11,17 @@ interface CustomWalletModalProps {
 
 export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, onClose }) => {
     const { wallets, select } = useWallet();
+    const [connectingWallet, setConnectingWallet] = React.useState<string | null>(null);
 
     if (!isOpen) return null;
 
     const handleSelectWallet = async (walletAdapter: any) => {
+        if (connectingWallet) return;
+        setConnectingWallet(walletAdapter.name);
         try {
             // Select the wallet first
             select(walletAdapter.name);
             // Initiate connection with required arguments
-            // Note: Provable (Shield) expects network to be passed, Leo expects it too.
-            // Using TestnetBeta as standard for now, wrapper handles conversion if needed.
             await walletAdapter.connect(
                 DecryptPermission.UponRequest,
                 WalletAdapterNetwork.TestnetBeta
@@ -29,6 +30,7 @@ export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, on
             onClose();
         } catch (error) {
             console.error("Connection failed:", error);
+            setConnectingWallet(null);
         }
     };
 
@@ -47,15 +49,18 @@ export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, on
                         // Strict safety check to prevent crashes
                         if (!wallet || !wallet.adapter || !wallet.adapter.name) return null;
 
+                        const isConnecting = connectingWallet === wallet.adapter.name;
+
                         return (
                             <button
                                 key={wallet.adapter.name}
-                                className="wallet-option"
+                                className={`wallet-option ${isConnecting ? 'connecting' : ''}`}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     handleSelectWallet(wallet.adapter);
                                 }}
+                                disabled={!!connectingWallet}
                             >
                                 <div className="wallet-icon">
                                     {wallet.adapter.icon ? (
@@ -66,8 +71,8 @@ export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, on
                                 </div>
                                 <div className="wallet-info">
                                     <span className="wallet-name">{wallet.adapter.name}</span>
-                                    <span className="wallet-status">
-                                        {wallet.readyState === 'Installed' ? 'Detected' : 'Not Detected'}
+                                    <span className={`wallet-status ${wallet.readyState === 'Installed' || wallet.readyState === 'Loadable' ? 'detected' : ''}`}>
+                                        {isConnecting ? 'Connecting...' : (wallet.readyState === 'Installed' || wallet.readyState === 'Loadable' ? 'Detected' : 'Connect')}
                                     </span>
                                 </div>
                             </button>

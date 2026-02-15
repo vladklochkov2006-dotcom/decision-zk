@@ -947,6 +947,9 @@ class ShieldWalletAdapterWrapper extends EventEmitter {
     this._adapter.on('accountChange' as any, () => {
       this.emit('accountChange');
     });
+    this._adapter.on('readyStateChange' as any, (readyState: any) => {
+      this.emit('readyStateChange', readyState);
+    });
   }
 
   get publicKey() { return this._adapter.account?.address || null; }
@@ -957,7 +960,20 @@ class ShieldWalletAdapterWrapper extends EventEmitter {
   async connect(decryptPermission: any, network: any, programs?: string[]) {
     // Translate network: testnetbeta (Demox) -> testnet (Provable/Shield)
     const provableNetwork = network === 'testnetbeta' ? 'testnet' : network;
+
     try {
+      // If wallet is in Loadable state, wait up to 1000ms for it to become Installed
+      // Cast to any to avoid strict enum comparison issues with the underlying adapter types
+      if ((this._adapter.readyState as any) === 'Loadable' || (this._adapter.readyState as any) === 'NotDetected') {
+        // console.log("ShieldWrapper: Wallet is Loadable/NotDetected, waiting for Installed...");
+        let attempts = 0;
+        // Poll every 100ms
+        while ((this._adapter.readyState as any) !== 'Installed' && attempts < 15) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
+      }
+
       // Force a fresh connection request
       const account = await this._adapter.connect(provableNetwork as any, decryptPermission as any, programs);
       this.emit('connect', account.address);

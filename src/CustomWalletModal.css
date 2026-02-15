@@ -98,6 +98,11 @@
     color: #888;
 }
 
+.wallet-status.detected {
+    color: #4ade80;
+    font-weight: 600;
+}
+
 /* Specific styling for Shield Wallet Icon (base64) */
 .wallet-icon svg,
 .wallet-icon img {
