@@ -214,7 +214,7 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
                                         <td>
                                             {(tx.status === 'Success' || tx.status === 'Settled' || tx.status === 'Finalized') ? (
                                                 <a
-                                                    href={`https://testnet.explorer.provable.com/transaction/${tx.id}`}
+                                                    href="https://testnet.explorer.provable.com/program/v_klochkov_private_decision_v1.aleo"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="explorer-link"
