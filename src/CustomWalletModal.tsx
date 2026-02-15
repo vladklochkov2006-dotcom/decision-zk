@@ -13,6 +13,12 @@ export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, on
     const { wallets, select } = useWallet();
     const [connectingWallet, setConnectingWallet] = React.useState<string | null>(null);
 
+    React.useEffect(() => {
+        if (isOpen) {
+            setConnectingWallet(null);
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleSelectWallet = async (walletAdapter: any) => {
