@@ -72,6 +72,15 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
     setIsWalletModalOpen(true);
   };
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="landing-page">
       <CustomWalletModal
@@ -89,10 +98,10 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
             <span>Decision.ZK</span>
           </div>
           <nav className="header-nav">
-            <a href="#protocol">Protocol</a>
-            <a href="#comparison">Comparison</a>
-            <a href="#ecosystem">Ecosystem</a>
-            <a href="#demo">Demo</a>
+            <a href="#protocol" onClick={(e) => handleNavClick(e, 'protocol')}>Protocol</a>
+            <a href="#comparison" onClick={(e) => handleNavClick(e, 'comparison')}>Comparison</a>
+            <a href="#ecosystem" onClick={(e) => handleNavClick(e, 'ecosystem')}>Ecosystem</a>
+            <a href="#demo" onClick={(e) => handleNavClick(e, 'demo')}>Demo</a>
           </nav>
 
           {connected ? (
@@ -129,10 +138,10 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
           />
           <div className="mobile-menu">
             <nav className="mobile-nav">
-              <a href="#protocol" onClick={() => setMobileMenuOpen(false)}>Protocol</a>
-              <a href="#comparison" onClick={() => setMobileMenuOpen(false)}>Comparison</a>
-              <a href="#ecosystem" onClick={() => setMobileMenuOpen(false)}>Ecosystem</a>
-              <a href="#demo" onClick={() => setMobileMenuOpen(false)}>Demo</a>
+              <a href="#protocol" onClick={(e) => handleNavClick(e, 'protocol')}>Protocol</a>
+              <a href="#comparison" onClick={(e) => handleNavClick(e, 'comparison')}>Comparison</a>
+              <a href="#ecosystem" onClick={(e) => handleNavClick(e, 'ecosystem')}>Ecosystem</a>
+              <a href="#demo" onClick={(e) => handleNavClick(e, 'demo')}>Demo</a>
             </nav>
             {connected ? (
               <>
@@ -306,27 +315,56 @@ export const Terminal = ({
       id: 1,
       title: "Should we allocate 20% of Treasury to ZK-Hardware?",
       desc: "Specialized ZK hardware will increase proving speed by 40% for all Aleo participants.",
-      votes: 127,
-      status: 'Active'
+      votes: 1240,
+      status: 'Active',
+      category: 'Treasury',
+      timeLeft: '24h',
+      privacyLevel: 'ZK-Max',
+      participants: 142,
+      comments: [
+        { id: 101, author: '0x123...abc', text: 'This is crucial for scaling. Full support.', time: '2h ago', status: 'Verified' },
+        { id: 102, author: '0x789...xyz', text: 'Can we get a cost breakdown first?', time: '4h ago', status: 'Verified' }
+      ]
+    },
+    {
+      type: 'dilemma',
+      id: 2,
+      title: 'Implement Quadratic Voting for Council Elections?',
+      desc: 'Quadratic voting minimizes whale dominance and promotes fairer representation.',
+      votes: 850,
+      status: 'Active',
+      category: 'Governance',
+      timeLeft: '48h',
+      privacyLevel: 'Shielded',
+      participants: 89,
+      options: ['Yes, implement immediately', 'No, keep current system', 'Delay for audit'],
+      comments: []
     },
     {
       type: 'paid_post',
-      id: 2,
+      id: 3,
       title: "Alpha Leak: Upcoming ZK-Rollup Partnership",
       teaser: "We have confirmed a major partnership with a Tier-1 exchange for the new ZK-Rollup layer. The listing date is set for...",
       hiddenContent: "The partnership is with Coinbase. Listing is scheduled for Q4 2026 pending regulatory approval. The initial liquidity pool with be seeded with $50M.",
       price: 50,
       isUnlocked: false,
-      author: "Deployer.aleo"
+      author: "Deployer.aleo",
+      comments: [
+        { id: 201, author: '0x999...111', text: 'Worth every token. Preparing my node now.', time: '10m ago', status: 'Insider' }
+      ]
     },
     {
       type: 'dilemma',
-      id: 3,
+      id: 4,
       title: "New Protocol: Reduced Transaction Fees?",
       desc: "Proposal to reduce base fees by 50% to encourage more frequent voting. Requires node upgrade.",
-      votes: 12,
-      status: 'Active',
-      comments: [] // Empty state demo
+      votes: 3200,
+      status: 'Pass',
+      category: 'Security',
+      timeLeft: 'Ended',
+      privacyLevel: 'Public',
+      participants: 410,
+      comments: []
     }
   ]);
 
@@ -739,7 +777,7 @@ export const Terminal = ({
             onThemeChange={setTheme}
           />
         ) : (
-          <>
+          <div className="terminal-content-wrapper">
             <header className="terminal-header">
               <div>
                 <h1>Global Feed</h1>
@@ -839,7 +877,7 @@ export const Terminal = ({
                 }
               })}
             </div>
-          </>
+          </div>
         )}
       </main>
 
@@ -858,17 +896,19 @@ export const Terminal = ({
         pendingItems={optimisticTransactions}
       />
 
-      {showSuccessToast && (
-        <TransactionSuccess
-          txId={lastTxId || ""}
-          isClosing={toastIsClosing}
-          onClose={() => setShowSuccessToast(false)}
-          onViewHistory={() => {
-            setShowSuccessToast(false);
-            setIsHistoryOpen(true);
-          }}
-        />
-      )}
+      {
+        showSuccessToast && (
+          <TransactionSuccess
+            txId={lastTxId || ""}
+            isClosing={toastIsClosing}
+            onClose={() => setShowSuccessToast(false)}
+            onViewHistory={() => {
+              setShowSuccessToast(false);
+              setIsHistoryOpen(true);
+            }}
+          />
+        )
+      }
 
       <ZKProofModal
         isOpen={zkModalOpen}
@@ -881,7 +921,7 @@ export const Terminal = ({
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateProposal}
       />
-    </div>
+    </div >
   );
 };
 

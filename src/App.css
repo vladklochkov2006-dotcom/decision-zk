@@ -5555,3 +5555,176 @@ h6 {
   color: #555;
   margin-top: 2px;
 }
+
+/* =========================================
+   TERMINAL MAIN & GLOBAL FEED REDESIGN
+   ========================================= */
+
+.terminal-main {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.terminal-content-wrapper,
+.my-proofs-container,
+.identity-container,
+.settings-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 80px 40px 60px 40px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure header is properly spaced */
+.terminal-header {
+  margin-bottom: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 30px;
+  position: relative;
+}
+
+/* Premium Header Typography */
+.terminal-header h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 4rem;
+  /* Massive, hero-like size */
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #a5a5a5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #fff;
+  /* Fallback */
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.terminal-header p {
+  color: #888;
+  font-size: 1.1rem;
+  margin-top: 15px;
+  max-width: 600px;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+/* Neon Mode Overrides for Header */
+.neon-mode .terminal-header h1 {
+  background: linear-gradient(135deg, #fff 0%, #A855F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
+}
+
+.neon-mode .terminal-header {
+  border-bottom-color: rgba(168, 85, 247, 0.2);
+}
+
+/* Header Stats (ZK-REP) Polish */
+.header-stats-simple {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px 30px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.header-stats-simple .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.header-stats-simple .stat-item .value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.header-stats-simple .stat-item .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #666;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.header-stats-simple .stat-divider {
+  width: 1px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Neon Mode Stats */
+.neon-mode .header-stats-simple {
+  background: rgba(168, 85, 247, 0.05);
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+}
+
+.neon-mode .header-stats-simple .stat-item .value {
+  text-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+  color: #E9D5FF;
+}
+
+/* =========================================
+   TERMINAL STRUCTURE (Added based on App.tsx structure)
+   ========================================= */
+
+.terminal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: var(--bg-deep);
+  z-index: 1000;
+  color: #fff;
+}
+
+.terminal-sidebar {
+  width: 250px;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.terminal-right-sidebar {
+  width: 350px;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+/* Neon Mode Structure Overrides */
+.neon-mode.terminal-overlay {
+  background: radial-gradient(circle at 50% 50%, #050515 0%, #020205 100%);
+}
+
+.neon-mode .terminal-sidebar,
+.neon-mode .terminal-right-sidebar {
+  border-color: rgba(168, 85, 247, 0.2);
+  background: rgba(168, 85, 247, 0.02);
+}

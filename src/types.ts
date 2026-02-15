@@ -15,6 +15,11 @@ export interface Dilemma {
     status: 'Active' | 'Pass' | 'Fail';
     options?: string[];
     comments?: Comment[];
+    // New Metadata for Cyberpunk Redesign
+    category?: 'Governance' | 'Treasury' | 'Security' | 'Upgrade';
+    timeLeft?: string;
+    privacyLevel?: 'ZK-Max' | 'Public' | 'Shielded';
+    participants?: number;
 }
 
 export interface PaidPost {
