@@ -448,6 +448,12 @@ export const Terminal = ({
         title: data.title,
         desc: data.description || "No description provided.",
         votes: 0,
+        status: 'Active',
+        category: 'Governance',
+        timeLeft: '72h',
+        privacyLevel: 'Shielded',
+        participants: 0,
+        comments: [],
         options: data.options
       } as Dilemma;
 
@@ -460,7 +466,8 @@ export const Terminal = ({
         hiddenContent: data.hiddenContent,
         price: data.price,
         isUnlocked: true, // Auto unlock for author
-        author: "You"
+        author: "You",
+        comments: []
       } as PaidPost;
 
     }
@@ -481,6 +488,7 @@ export const Terminal = ({
     }
     if (wallet && connected && wallet.adapter?.publicKey) {
       setZkModalOpen(true);
+      setZkStage('GENERATING');
 
       try {
         await new Promise(r => setTimeout(r, 2000));

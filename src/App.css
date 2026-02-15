@@ -4119,6 +4119,10 @@ h6 {
   padding: 40px;
   width: 90%;
   max-width: 500px;
+  max-height: 85vh;
+  /* Added scrolling support */
+  overflow-y: auto;
+  /* Added scrolling support */
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(20px);
@@ -4237,7 +4241,8 @@ h6 {
 .btn-submit {
   flex: 2;
   padding: 15px;
-  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  /* Updated to match Paid Post blue style requested by user */
+  background: linear-gradient(135deg, #00D9FF 0%, #00B3FF 100%);
   border: none;
   color: #000;
   font-weight: 600;
@@ -4248,11 +4253,12 @@ h6 {
   justify-content: center;
   gap: 10px;
   transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
 }
 
 .btn-submit:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(0, 217, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 217, 255, 0.5);
 }
 
 .btn-submit:disabled {

@@ -48,25 +48,26 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
 
         setIsSubmitting(true);
 
-        // Simulate ZK proof generation and submission delay
-        setTimeout(() => {
-            if (type === 'proposal') {
-                onSubmit({ type: 'proposal', title, description, stakeAmount, options });
-            } else {
-                onSubmit({ type: 'paid_post', title, teaser, hiddenContent, price });
-            }
+        setIsSubmitting(true);
 
-            setIsSubmitting(false);
-            // Reset fields
-            setTitle('');
-            setDescription('');
-            setStakeAmount(50);
-            setOptions(['Yes', 'No']);
-            setTeaser('');
-            setHiddenContent('');
-            setPrice(50);
-            onClose();
-        }, 2000);
+        // Immediate submission to handoff to App.tsx ZK flow
+        if (type === 'proposal') {
+            onSubmit({ type: 'proposal', title, description, stakeAmount, options });
+        } else {
+            onSubmit({ type: 'paid_post', title, teaser, hiddenContent, price });
+        }
+
+        setIsSubmitting(false);
+        // Reset fields
+        setTitle('');
+        setDescription('');
+        setStakeAmount(50);
+        setOptions(['Yes', 'No']);
+        setTeaser('');
+        setHiddenContent('');
+        setPrice(50);
+
+        onClose();
     };
 
     return (
