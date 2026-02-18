@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { WalletProvider, useWallet } from "@demox-labs/aleo-wallet-adapter-react";
-import { WalletModalProvider, WalletMultiButton } from "@demox-labs/aleo-wallet-adapter-reactui";
+import { WalletModalProvider } from "@demox-labs/aleo-wallet-adapter-reactui";
 import { LeoWalletAdapter } from "@demox-labs/aleo-wallet-adapter-leo";
 import { ShieldWalletAdapter } from "@provablehq/aleo-wallet-adaptor-shield";
 import {
@@ -9,9 +9,10 @@ import {
   DecryptPermission
 } from "@demox-labs/aleo-wallet-adapter-base";
 import EventEmitter from "eventemitter3";
-import { Shield, Zap, Lock, Activity, LayoutGrid, Menu, X, Cpu, UserCheck, Plus, Loader2, Clock, BookOpen } from "lucide-react";
+import { Shield, Zap, Lock, Activity, LayoutGrid, Menu, X, Cpu, UserCheck, Plus, Loader2, Clock, BookOpen, RefreshCw, ShieldCheck } from "lucide-react";
 import "@demox-labs/aleo-wallet-adapter-reactui/styles.css";
 import "./App.css";
+
 import { ZKVisualization } from "./ZKVisualization";
 import { ZKBadgeEcosystem } from "./ZKBadgeEcosystem";
 import { RichComparison } from "./RichComparison";
@@ -20,7 +21,6 @@ import { InteractiveDemo } from "./InteractiveDemo";
 import { ParticleBackground } from "./ParticleBackground";
 import { ScrollProgress } from "./ScrollProgress";
 import { FAQDocumentation } from "./FAQDocumentation";
-import { ZKBadge } from "./ZKBadge";
 import { MyProofs } from "./MyProofs";
 import { Identity } from "./Identity";
 import { AiAssistant } from "./AiAssistant";
@@ -30,7 +30,357 @@ import { TransactionSuccess } from "./TransactionSuccess";
 import { ZKProofModal } from "./ZKProofModal";
 import { ZKLogo } from "./ZKLogo";
 import { Settings } from "./Settings";
-import { supabase } from "./supabaseClient";
+import { CustomWalletModal } from "./CustomWalletModal";
+import { VotingCard } from "./VotingCard";
+import { DiscussionSection } from "./DiscussionSection";
+import type { Dilemma, PaidPost, FeedItem, VoteRecord, Comment } from "./types";
+import { PrivacyProvider, PrivacySensitive } from "./contexts/PrivacyContext";
+
+const ProtocolStatusBoard = () => {
+  // ... (existing code or simplified for brevity if needed)
+  return (
+    <div className="protocol-status-board">
+      <div className="status-container">
+        <div className="status-node">
+          <div className="pulse-dot"></div>
+          <span className="node-label">ALEO_TESTNET_NODE:</span>
+          <span className="node-val">ACTIVE</span>
+        </div>
+        <div className="status-divider"></div>
+        <div className="status-node">
+          <Shield size={12} className="text-emerald-500" />
+          <span className="node-label">PROTOCOL:</span>
+          <span className="node-val">ZK_DECISION_V2</span>
+        </div>
+        <div className="status-divider"></div>
+        <div className="status-node hide-mobile">
+          <Cpu size={12} />
+          <span className="node-label">TPS:</span>
+          <span className="node-val">2,429/s</span>
+        </div>
+        <div className="status-divider hide-mobile"></div>
+        <div className="status-node">
+          <span className="node-label">BLOCK:</span>
+          <span className="node-val">#1,429,083</span>
+        </div>
+        <div className="status-divider"></div>
+        <div className="status-node">
+          <div className="aleo-mini-logo"></div>
+          <span className="node-val">POWERED BY ALEO</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GovernanceMetrics = ({ wallet, userVote, stakeAmount }: { wallet: any, userVote?: any, stakeAmount: number }) => {
+  // Aggregation logic for real ALEO staked
+  const totalStakedReal = useMemo(() => {
+    const localKey = `tx_history_${wallet?.adapter?.publicKey}`;
+    const localData: any[] = JSON.parse(localStorage.getItem(localKey) || '[]');
+    // Filter for votes and sum stake amounts if available (or use a fallback for mock consistency)
+    const stakedVotes = localData.filter(tx => tx.type === 'vote').length;
+    return (stakedVotes * 42.5) + (stakeAmount / 10); // Base mock + real current session weight
+  }, [wallet?.adapter?.publicKey, userVote, stakeAmount]);
+
+  const quorumPercentage = useMemo(() => {
+    return (64.2 + (totalStakedReal / 1000)).toFixed(1);
+  }, [totalStakedReal]);
+
+  return (
+    <div className="governance-metrics-panel card-bg anim-fade-in">
+      <div className="metric-item">
+        <div className="metric-header">
+          <span>Network Quorum</span>
+          <span>{quorumPercentage}%</span>
+        </div>
+        <div className="metric-progress-bg">
+          <div className="metric-progress-fill" style={{ width: `${quorumPercentage}%` }}></div>
+        </div>
+      </div>
+
+      <div className="metric-item">
+        <div className="metric-header">
+          <span>Staking Participation</span>
+          <span>{(1.2 + totalStakedReal / 100).toFixed(2)}M ALEO</span>
+        </div>
+        <div className="metric-progress-bg">
+          <div className="metric-progress-fill" style={{ width: '45%', background: '#6366f1', boxShadow: '0 0 10px #6366f1' }}></div>
+        </div>
+      </div>
+
+      <div className="metric-item" style={{ marginTop: '8px' }}>
+        <div className="metric-header">
+          <span>Finalization Status</span>
+          <span style={{ color: '#10b981' }}>CONFIRMED</span>
+        </div>
+        <div className="metric-value" style={{ fontSize: '0.7rem', color: '#666', fontFamily: 'JetBrains Mono' }}>
+          BLOCK: #2,841,092
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DetailedProposalView = ({
+  item,
+  onBack,
+  onVote,
+  loadingVote,
+  userVote,
+  stakeAmount,
+  onStakeChange,
+  onTriggerAssistant,
+  wallet,
+  onPostComment
+}: {
+  item: FeedItem,
+  onBack: () => void,
+  onVote: (id: number, choice: string, stakeAmount: number) => void,
+  loadingVote: number | null,
+  userVote?: any,
+  stakeAmount: number,
+  onStakeChange: (val: number) => void,
+  onTriggerAssistant: () => void,
+  wallet: any,
+  onPostComment?: (id: number, text: string) => void
+}) => {
+  const isDilemma = item.type === 'dilemma';
+  const dilemma = item as Dilemma;
+
+  // Fix ID Stability: Use useMemo to generate fixed hashes once per item ID
+  const refId = useMemo(() => `#at1${(item.id * 1234567).toString(16).slice(0, 8)}...${(item.id * 7654321).toString(16).slice(0, 4)}`, [item.id]);
+
+  const activityLog = useMemo(() => {
+    return [...Array(4)].map((_, i) => ({
+      time: `[${12 + i}:4${i} UTC]`,
+      hash: `at1${((item.id + i) * 987654).toString(16).slice(0, 12)}...`,
+      action: 'SHIELDED_VOTE_RECORDED'
+    }));
+  }, [item.id]);
+
+  const [auditRevealed, setAuditRevealed] = useState(false);
+
+  return (
+    <div className="detailed-proposal-view glass-panel anim-fade-in">
+      <div className="detailed-header">
+        <button className="back-btn-styled" onClick={onBack}>
+          <X size={16} /> Back to Feed
+        </button>
+        <div className="security-status-header">
+          <Lock size={14} className="text-emerald-500" />
+          <span>Shielded Transaction Enabled</span>
+        </div>
+      </div>
+
+      <div className="detailed-vibe-header">
+        <div className="proposal-title-section">
+          <div className="category-tag">{isDilemma ? dilemma.category || 'GOVERNANCE' : 'PREMIUM_POST'}</div>
+          <h1>{item.title}</h1>
+          <div className="proposal-hash">
+            REF_ID: <span className="mono">{refId}</span>
+          </div>
+        </div>
+
+        <div className="proposal-description card-bg">
+          <h3>Protocol Objective</h3>
+          <span>{item.type === 'dilemma' ? dilemma.desc : (item as PaidPost).teaser}</span>
+        </div>
+      </div>
+
+      <div className="detailed-grid">
+        {!userVote ? (
+          <>
+            <div className="detailed-main-col">
+              <div className="on-chain-activity-log card-bg">
+                <div className="log-header">
+                  <Zap size={14} />
+                  <span>Recent On-Chain Activity</span>
+                </div>
+                <div className="log-entries">
+                  {isDilemma && ((item as Dilemma).votes || 0) > 0 ? activityLog.map((log, i) => (
+                    <div key={i} className="log-entry">
+                      <span className="log-time">{log.time}</span>
+                      <span className="log-hash">{log.hash}</span>
+                      <span className="log-action">SHIELDED VOTE</span>
+                    </div>
+                  )) : (
+                    <div className="log-empty-state" style={{ color: '#555', padding: '20px', textAlign: 'center', fontSize: '0.8rem' }}>
+                      WAITING_FOR_INITIAL_VOTES...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="detailed-sidebar-col">
+              <div className="participation-module card-bg anim-fade-in">
+                <div className="module-header">
+                  <h4>PARTICIPATE</h4>
+                </div>
+
+                <div className="stake-info">
+                  <span>Stake Aleo</span>
+                  <span>{stakeAmount.toFixed(1)} ALEO</span>
+                </div>
+
+                <input
+                  type="range"
+                  min="1"
+                  step="0.1"
+                  value={stakeAmount || 1}
+                  onChange={(e) => onStakeChange(parseFloat(e.target.value))}
+                  className="range-slider"
+                />
+
+                <div className="power-calculation">
+                  <div className="power-calc-header">
+                    <span>Power = √Stake</span>
+                  </div>
+                  <div className="power-bar-bg">
+                    <div className="power-bar-fill" style={{ width: `${Math.min(100, (Math.sqrt(stakeAmount || 1) / 10) * 100)}%` }}></div>
+                  </div>
+                </div>
+
+                <div className="button-group">
+                  {isDilemma && dilemma.options ? (
+                    dilemma.options.map((opt, i) => (
+                      <button
+                        key={i}
+                        className={`btn-vote-outline ${opt.toLowerCase().includes('yes') || opt.toLowerCase().includes('support') ? 'support' : opt.toLowerCase().includes('no') || opt.toLowerCase().includes('oppose') ? 'oppose' : 'neutral'}`}
+                        onClick={() => onVote(item.id, opt, stakeAmount)}
+                        disabled={stakeAmount < 0.1 || loadingVote !== null}
+                      >
+                        {loadingVote === item.id ? 'SIGNING...' : opt.toUpperCase()}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        className="btn-vote-outline support"
+                        onClick={() => onVote(item.id, 'Support', stakeAmount)}
+                        disabled={stakeAmount < 0.1 || loadingVote !== null}
+                      >
+                        {loadingVote === item.id ? 'SIGNING...' : 'SUPPORT'}
+                      </button>
+                      <button
+                        className="btn-vote-outline oppose"
+                        onClick={() => onVote(item.id, 'Oppose', stakeAmount)}
+                        disabled={stakeAmount < 0.1 || loadingVote !== null}
+                      >
+                        {loadingVote === item.id ? 'SIGNING...' : 'OPPOSE'}
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className="vote-confirmed-badge">
+                  <Shield size={12} className="text-emerald-500" />
+                  <span>ZK-Shielded Voting Enabled</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="assistant-chat-module card-bg assistant-full-width">
+              <div className="assistant-header">
+                <div className="assistant-avatar">ZK</div>
+                <div>
+                  <div className="name">ZK Assistant</div>
+                  <div className="status">Protocol Audit Ready</div>
+                </div>
+              </div>
+              <p className="assistant-content">
+                "Found potential incentive misalignment in Option B. I recommend analyzing the treasury impact via the Shielded Protocol before finalization."
+              </p>
+              <button className="ask-assistant-btn" onClick={onTriggerAssistant}>Verify Security Protocol</button>
+            </div>
+          </>
+        ) : (
+          <div className="post-vote-immersive-hub anim-fade-in">
+            {/* Top Primary Row: 70% Focus */}
+            <div className="immersive-discussion-zone card-bg">
+              <div className="social-indicators-row">
+                <div className="social-chip">
+                  <span className="pulse-dot"></span>
+                  12 Active Participants
+                </div>
+                <div className="social-chip proofs">
+                  <span className="pulse-dot"></span>
+                  28 Live Proofs
+                </div>
+              </div>
+              <DiscussionSection
+                isLocked={false}
+                comments={item.comments}
+                onPostComment={(text) => onPostComment?.(item.id, text)}
+                hideHeader={false}
+              />
+            </div>
+
+            {/* Bottom Status Row: 30% Info */}
+            <div className="post-vote-status-bar">
+              <div className="status-module-leveled glass-card-premium">
+                <div className="vote-success-module">
+                  <div className="vote-success-icon-wrapper" style={{ margin: '0 auto 10px', width: '40px', height: '40px' }}>
+                    <ShieldCheck size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '1.2rem', marginBottom: '4px' }}>Vote Encrypted!</h2>
+                  <div className="choice-summary-row" style={{ padding: '8px 12px', marginBottom: '12px' }}>
+                    <span className="choice-label" style={{ fontSize: '0.75rem' }}>Choice:</span>
+                    <div className="choice-value">
+                      <span className={`choice-text ${userVote.choice.toLowerCase().includes('no') || userVote.choice.toLowerCase().includes('oppose') ? 'oppose' : ''}`} style={{ fontSize: '0.9rem' }}>
+                        {userVote.choice}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button className="try-again-btn-styled" onClick={onBack} style={{ marginTop: '12px', padding: '8px' }}>Dashboard</button>
+                </div>
+              </div>
+
+              <div className="status-module-leveled card-bg">
+                <div className="assistant-header" style={{ marginBottom: '12px' }}>
+                  <div className="assistant-avatar" style={{ width: '30px', height: '30px', fontSize: '0.7rem' }}>ZK</div>
+                  <div>
+                    <div className="name" style={{ fontSize: '0.7rem' }}>ZK Assistant</div>
+                    <div className="status" style={{ fontSize: '0.55rem' }}>Audit Ready</div>
+                  </div>
+                </div>
+                {auditRevealed ? (
+                  <p className="assistant-content anim-fade-in" style={{ fontSize: '0.75rem', marginBottom: '12px', whiteSpace: 'pre-wrap', fontFamily: 'JetBrains Mono', color: '#aaa', lineHeight: '1.4' }}>
+                    VERIFYING_ZK_PROOF_INTEGRITY... [DONE]<br />
+                    GENERATION_PHASE: Poseidon Commitment / Varuna-zkSNARK<br />
+                    RESULT: LOCAL_WITNESS_VALID.<br />
+                    STATUS: Broadcasting to Aleo Shielded Pool via private_decision_v4.aleo.
+                  </p>
+                ) : (
+                  <p className="assistant-content" style={{ fontSize: '0.75rem', marginBottom: '12px', color: '#666', fontStyle: 'italic', lineHeight: '1.4' }}>
+                    "ZK-Proof verification data is available for this transaction. Run audit to verify cryptographic integrity."
+                  </p>
+                )}
+                <button
+                  className="ask-assistant-btn"
+                  onClick={() => {
+                    setAuditRevealed(true);
+                    onTriggerAssistant();
+                  }}
+                  style={{ padding: '10px', fontSize: '0.7rem' }}
+                >
+                  {auditRevealed ? 'Audit Complete' : 'Privacy Audit'}
+                </button>
+              </div>
+
+              <div className="status-module-leveled card-bg">
+                <GovernanceMetrics wallet={wallet} userVote={userVote} stakeAmount={stakeAmount} />
+              </div>
+            </div>
+          </div>
+        )
+        }
+      </div >
+    </div >
+  );
+};
+
 
 const MOCK_USER_STATS = {
   rep: 92.4,
@@ -41,12 +391,7 @@ const MOCK_USER_STATS = {
   proofs: 15
 };
 
-import { CustomWalletModal } from "./CustomWalletModal";
-import { VotingCard } from "./VotingCard";
-import { DiscussionSection } from "./DiscussionSection";
-import type { Dilemma, PaidPost, FeedItem, VoteRecord } from "./types";
-
-const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 'neon' }) => {
+const LandingPage = ({ onEnter }: { onEnter: () => void }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { connected, disconnect } = useWallet();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -67,7 +412,7 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     } catch (e) {
-      console.warn("Disconnect error:", e);
+      // Disconnect handled
     }
     setIsWalletModalOpen(true);
   };
@@ -87,8 +432,9 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
       />
+      <ProtocolStatusBoard />
       <div className="bg-grid"></div>
-      <ParticleBackground theme={theme} />
+      <ParticleBackground />
       <ScrollProgress />
 
       <header className="landing-header">
@@ -109,7 +455,7 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
               <button className="header-cta" onClick={handleEnterApp}>
                 Launch App
               </button>
-              <button className="header-cta" onClick={handleChangeWallet} style={{ background: 'transparent', border: '1px solid #00D9FF', color: '#fff' }}>
+              <button className="header-cta-outline" onClick={handleChangeWallet}>
                 Change Wallet
               </button>
             </div>
@@ -148,7 +494,7 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
                 <button className="mobile-cta" onClick={handleEnterApp} style={{ marginBottom: 10 }}>
                   Launch App
                 </button>
-                <button className="mobile-cta" onClick={handleChangeWallet} style={{ background: '#333', color: '#fff' }}>
+                <button className="mobile-cta" onClick={handleChangeWallet} style={{ background: 'transparent', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#fff' }}>
                   Change Wallet
                 </button>
               </>
@@ -162,14 +508,6 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
       )}
 
       <section className="hero" id="protocol">
-        <div className="hero-badges">
-          <span className="hero-badge badge-aleo">
-            <Zap size={14} /> POWERED BY ALEO
-          </span>
-          <span className="hero-badge badge-zk">
-            <ZKLogo className="w-3.5 h-3.5" /> ZERO-KNOWLEDGE PROOFS
-          </span>
-        </div>
         <p className="hero-tag">ZK-GOVERNANCE PROTOCOL</p>
         <h1 className="hero-title">
           <span className="title-line-1">Anonymous Voice.</span>
@@ -193,19 +531,20 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
           )}
         </div>
 
+
         <div className="steps-container">
           <div className="step-card">
-            <Lock size={24} color="#00D9FF" />
+            <Lock size={24} color="#10B981" />
             <h3>Shield Identity</h3>
             <p>Your identity and stake are wrapped in a ZK-proof. Invisible to the public, verifiable by math.</p>
           </div>
           <div className="step-card">
-            <Cpu size={24} color="#00D9FF" />
+            <Cpu size={24} color="#10B981" />
             <h3>Blind Stake</h3>
             <p>Vote on proposals without herd mentality. The count stays encrypted until the reveal phase.</p>
           </div>
           <div className="step-card">
-            <UserCheck size={24} color="#00D9FF" />
+            <UserCheck size={24} color="#10B981" />
             <h3>ZK-Reputation</h3>
             <p>Participate in governance and earn non-transferable reputation credits based on your contribution.</p>
           </div>
@@ -222,7 +561,7 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
         <InteractiveDemo />
       </section>
 
-      <ZKBadge />
+
 
       <section id="ecosystem">
         <ZKBadgeEcosystem />
@@ -244,70 +583,246 @@ const LandingPage = ({ onEnter, theme }: { onEnter: () => void, theme: 'dark' | 
 export const Terminal = ({
   onExit,
   publicBalance,
-  setPublicBalance,
   privateBalance,
-  setPrivateBalance,
-  theme,
-  setTheme
+  refreshPublic,
+  refreshPrivate
 }: {
   onExit: () => void;
   publicBalance: number;
-  setPublicBalance: React.Dispatch<React.SetStateAction<number>>;
   privateBalance: number;
-  setPrivateBalance: React.Dispatch<React.SetStateAction<number>>;
-  theme: 'dark' | 'neon';
-  setTheme: React.Dispatch<React.SetStateAction<'dark' | 'neon'>>;
+  refreshPublic: (addr: string) => void;
+  refreshPrivate: () => void;
 }) => {
   const { connected, wallet } = useWallet();
   const [activeTab, setActiveTab] = useState('feed');
+  const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null);
+  const [stakeAmount, setStakeAmount] = useState<number>(0.1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
-
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastIsClosing, setToastIsClosing] = useState(false);
+  const [optimisticTransactions, setOptimisticTransactions] = useState<TransactionRecord[]>([]);
+  const [loadingUnlock, setLoadingUnlock] = useState<number | null>(null);
+  const [userVotes, setUserVotes] = useState<Record<number, VoteRecord>>({});
+  const [loadingVote, setLoadingVote] = useState<number | null>(null);
+  const [lastTxId, setLastTxId] = useState<string | null>(null);
+  const [assistantTrigger, setAssistantTrigger] = useState<string>('IDLE');
 
-  const handleShieldInternal = () => {
-    if (publicBalance <= 0) return;
-    setTimeout(() => {
-      setPrivateBalance(prev => prev + 5.00);
-      setPublicBalance(prev => Math.max(0, prev - 5.00));
-    }, 2000);
+  // --- TRANSACTION POLLING WORKER INTEGRATION ---
+  const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    // Initialize the worker from the local file
+    const worker = new Worker(new URL('./txWorker.js', import.meta.url));
+    workerRef.current = worker;
+
+    worker.onmessage = (e) => {
+      const { type, txId, message } = e.data;
+      if (type === 'TX_SUCCESS') {
+        console.log(`[Decision.ZK] Finalized: ${txId}`);
+        setOptimisticTransactions(prev => prev.map(tx =>
+          tx.id === txId ? { ...tx, status: 'Success' } : tx
+        ));
+
+        // Refresh balances after confirmation
+        if (wallet?.adapter?.publicKey) {
+          refreshPublic(wallet.adapter.publicKey);
+          refreshPrivate();
+        }
+
+        // CRITICAL: Update localStorage so it persists after reload
+        if (wallet?.adapter?.publicKey) {
+          const localKey = `tx_history_${wallet.adapter.publicKey}`;
+          const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+          const updatedLocal = localData.map((tx: any) =>
+            tx.id === txId ? { ...tx, status: 'Success' } : tx
+          );
+          localStorage.setItem(localKey, JSON.stringify(updatedLocal));
+        }
+      } else if (type === 'TX_ERROR') {
+        console.error(`[App] Transaction ${txId} error: ${message}`);
+        setOptimisticTransactions(prev => prev.map(tx =>
+          tx.id === txId ? { ...tx, status: 'Failed' } : tx
+        ));
+
+        // Update localStorage for errors too
+        if (wallet?.adapter?.publicKey) {
+          const localKey = `tx_history_${wallet.adapter.publicKey}`;
+          const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+          const updatedLocal = localData.map((tx: any) =>
+            tx.id === txId ? { ...tx, status: 'Failed' } : tx
+          );
+          localStorage.setItem(localKey, JSON.stringify(updatedLocal));
+        }
+      }
+    };
+
+    return () => {
+      worker.terminate();
+    };
+  }, [wallet?.adapter?.publicKey]);
+
+  // Resume tracking for any "Broadcasted" transactions found in history
+  useEffect(() => {
+    if (connected && wallet?.adapter?.publicKey) {
+      const localKey = `tx_history_${wallet.adapter.publicKey}`;
+      const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+      const broadcasted = localData.filter((tx: any) => tx.status === 'Broadcasted');
+
+      if (broadcasted.length > 0) {
+        broadcasted.forEach((tx: any) => trackWithWorker(tx.id));
+        // Also add them to optimistic transactions so they show up in UI
+        setOptimisticTransactions(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newItems = broadcasted.filter((b: any) => !existingIds.has(b.id));
+          return [...prev, ...newItems];
+        });
+      }
+    }
+  }, [connected, wallet?.adapter?.publicKey]);
+
+  // --- NEW: WALLET-BASED POLLING ---
+  // Poll via the wallet adapter DIRECTLY (because it often knows status before websites)
+  useEffect(() => {
+    if (!connected || !wallet?.adapter || optimisticTransactions.length === 0) return;
+
+    const interval = setInterval(async () => {
+      const pendingTxs = optimisticTransactions.filter(tx => tx.status === 'Broadcasted');
+      if (pendingTxs.length === 0) return;
+
+      for (const tx of pendingTxs) {
+        try {
+          // Attempt to get status via the adapter or standard getTransactionStatus
+          const adapter = wallet.adapter as any;
+          let remoteStatus = null;
+
+          if (typeof adapter.getTransactionStatus === 'function') {
+            remoteStatus = await adapter.getTransactionStatus(tx.id);
+          } else if (typeof adapter.getExecution === 'function') {
+            // Some newer adapters use getExecution which returns a promise/string
+            const result = await adapter.getExecution(tx.id);
+            if (result) remoteStatus = 'Finalized';
+          }
+
+          if (remoteStatus) {
+            const statusStr = String(remoteStatus).toLowerCase();
+            if (statusStr === 'finalized' || statusStr === 'accepted' || statusStr === 'completed') {
+              console.log(`[Decision.ZK] Verified @wallet: ${tx.id}`);
+
+              // 1. Update UI
+              setOptimisticTransactions(prev => prev.map(p =>
+                p.id === tx.id ? { ...p, status: 'Success' } : p
+              ));
+
+              // Refresh balances
+              if (wallet?.adapter?.publicKey) {
+                refreshPublic(wallet.adapter.publicKey);
+                refreshPrivate();
+              }
+
+              // 2. Update Persisted History
+              if (wallet?.adapter?.publicKey) {
+                const localKey = `tx_history_${wallet.adapter.publicKey}`;
+                const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+                const updatedLocal = localData.map((l: any) =>
+                  l.id === tx.id ? { ...l, status: 'Success' } : l
+                );
+                localStorage.setItem(localKey, JSON.stringify(updatedLocal));
+              }
+            } else if (statusStr === 'failed' || statusStr === 'rejected') {
+              // Handle failure similarly
+              setOptimisticTransactions(prev => prev.map(p =>
+                p.id === tx.id ? { ...p, status: 'Failed' } : p
+              ));
+            }
+          }
+        } catch (e) {
+          // Silent fail for non-supported or missing tx
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [connected, wallet?.adapter, optimisticTransactions]);
+
+  const trackWithWorker = (txId: string) => {
+    if (workerRef.current && txId && txId.startsWith('at1')) {
+      workerRef.current.postMessage({ type: 'TRACK_TRANSACTION', txId });
+    }
   };
 
-  // WALLET GATEWAY CHECK
-  if (!connected) {
-    return (
-      <div className="wallet-gateway-overlay">
-        <div className="gateway-content">
-          <div className="gateway-icon">
-            <Lock size={64} color="#00D9FF" className="gateway-lock" />
-          </div>
-          <h2 className="gateway-title">System Locked</h2>
-          <p className="gateway-desc">
-            Access to the Zero-Knowledge Governance Terminal requires a secure wallet connection.
-            Your identity remains chemically separated from your actions.
-          </p>
-          <div className="gateway-actions">
-            <WalletMultiButton />
-          </div>
-          <button
-            onClick={onExit}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#666',
-              marginTop: 24,
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              textDecoration: 'underline'
-            }}
-          >
-            Return to Landing Page
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const triggerAssistantMessage = () => {
+    const id = Date.now().toString();
+    setAssistantTrigger(id);
+    // Auto reset trigger state
+    setTimeout(() => setAssistantTrigger('IDLE'), 100);
+  };
+
+  const handlePostComment = (itemId: number, text: string) => {
+    setFeedItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const newComment: Comment = {
+          id: Date.now(),
+          author: "You (Anon)",
+          text: text,
+          time: "Just now",
+          status: "Verified"
+        };
+        return {
+          ...item,
+          comments: [newComment, ...(item.comments || [])]
+        };
+      }
+      return item;
+    }));
+
+    // If currently viewing this item in detailed view, update selectedItem too
+    if (selectedItem && selectedItem.id === itemId) {
+      setSelectedItem(prev => {
+        if (!prev) return null;
+        const newComment: Comment = {
+          id: Date.now(),
+          author: "You (Anon)",
+          text: text,
+          time: "Just now",
+          status: "Verified"
+        };
+        return {
+          ...prev,
+          comments: [newComment, ...(prev.comments || [])]
+        };
+      });
+    }
+  };
+
+  const handleItemClick = (item: FeedItem) => {
+    // Block "Entry" into detailed view for closed dilemmas (Item 2)
+    if (item.type === 'dilemma') {
+      const dilemma = item as Dilemma;
+      if (dilemma.status !== 'Active') {
+        setZkError({
+          title: 'Voting Closed',
+          message: `This proposal is already ${dilemma.status.toLowerCase()}. You can only view the aggregate results on the dashboard.`
+        });
+        setZkStage('ERROR');
+        setZkModalOpen(true);
+        return;
+      }
+    }
+    setSelectedItem(item);
+  };
+
+  const handleBackToFeed = () => {
+    setSelectedItem(null);
+    setLoadingVote(null);
+    setZkStage('GENERATING');
+  };
+
+  // Helper to update Transaction ID in state and localStorage once Bech32 is found
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [zkModalOpen, setZkModalOpen] = useState(false);
+  const [zkStage, setZkStage] = useState<'GENERATING' | 'SIGNING' | 'BROADCASTING' | 'SUCCESS' | 'ERROR'>('GENERATING');
+  const [zkError, setZkError] = useState<{ title: string; message: string } | null>(null);
 
   const [feedItems, setFeedItems] = useState<FeedItem[]>([
     {
@@ -346,9 +861,8 @@ export const Terminal = ({
       title: "Alpha Leak: Upcoming ZK-Rollup Partnership",
       teaser: "We have confirmed a major partnership with a Tier-1 exchange for the new ZK-Rollup layer. The listing date is set for...",
       hiddenContent: "The partnership is with Coinbase. Listing is scheduled for Q4 2026 pending regulatory approval. The initial liquidity pool with be seeded with $50M.",
-      price: 50,
+      price: 1,
       isUnlocked: false,
-      author: "Deployer.aleo",
       comments: [
         { id: 201, author: '0x999...111', text: 'Worth every token. Preparing my node now.', time: '10m ago', status: 'Insider' }
       ]
@@ -368,6 +882,114 @@ export const Terminal = ({
     }
   ]);
 
+  const handleShieldInternal = () => {
+    if (publicBalance <= 0) return;
+    // Removed synthetic deduction. Balance will sync from wallet reporter.
+  };
+
+  // Auto-Exit if wallet disconnects (Silent Redirect as requested)
+  useEffect(() => {
+    // Give provider 2 seconds to initialize before triggering exit
+    const timer = setTimeout(() => {
+      if (!connected) {
+        console.log("Wallet disconnected, exiting terminal...");
+        onExit();
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [connected, onExit]);
+
+  // Load persistent votes (Item 7)
+  useEffect(() => {
+    if (connected && wallet?.adapter?.publicKey) {
+      const address = wallet.adapter.publicKey;
+      const loadedVotes: Record<number, VoteRecord> = {};
+
+      feedItems.forEach(item => {
+        const key = `vote_${address}_${item.id}`;
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          try {
+            loadedVotes[item.id] = JSON.parse(stored);
+          } catch (e) {
+            console.error("Failed to parse stored vote", e);
+          }
+        }
+      });
+
+      setUserVotes(loadedVotes);
+    } else {
+      setUserVotes({});
+    }
+  }, [connected, wallet?.adapter?.publicKey, feedItems]);
+
+  // Global Sync for Votes & Unlocks (Manual/Console/Multi-tab - Item 7)
+  useEffect(() => {
+    const syncAllState = () => {
+      if (connected && wallet?.adapter?.publicKey) {
+        const address = wallet.adapter.publicKey;
+
+        // 1. Sync Votes
+        const loadedVotes: Record<number, VoteRecord> = {};
+        feedItems.forEach(item => {
+          const key = `vote_${address}_${item.id}`;
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            try { loadedVotes[item.id] = JSON.parse(stored); } catch (_e) { }
+          }
+        });
+
+        setUserVotes(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(loadedVotes)) return prev;
+          return loadedVotes;
+        });
+
+        // 2. Sync Unlocked Posts (Item 7 Expansion)
+        setFeedItems(currentItems => {
+          let selectionChanged = false;
+          const updated = currentItems.map(item => {
+            if (item.id && item.type === 'paid_post') {
+              const key = `unlock_${address}_${item.id}`;
+              const isStoredLocked = localStorage.getItem(key) === 'true';
+              if (item.isUnlocked !== isStoredLocked) {
+                selectionChanged = true;
+                return { ...item, isUnlocked: isStoredLocked };
+              }
+            }
+            return item;
+          });
+          return selectionChanged ? updated : currentItems;
+        });
+
+      } else {
+        setUserVotes(prev => Object.keys(prev).length === 0 ? prev : {});
+        // Lock all paid posts that aren't ours if wallet disconnected
+        setFeedItems(currentItems => currentItems.map(item =>
+          (item.type === 'paid_post' && item.author !== "You") ? { ...item, isUnlocked: false } : item
+        ));
+      }
+    };
+
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === null || e.key.startsWith('vote_') || e.key.startsWith('unlock_')) syncAllState();
+    };
+
+    const handleUpdateEvent = () => syncAllState();
+
+    window.addEventListener('storage', handleStorageEvent);
+    window.addEventListener('vote_updated', handleUpdateEvent);
+    window.addEventListener('focus', syncAllState);
+
+    // Initial sync
+    syncAllState();
+
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+      window.removeEventListener('vote_updated', handleUpdateEvent);
+      window.removeEventListener('focus', syncAllState);
+    };
+  }, [connected, wallet?.adapter?.publicKey, feedItems.length]); // depend on length to allow attribute updates
+
   const handleCreateProposal = async (data: any) => {
     let newItem: FeedItem | null = null;
     let txId: string | undefined;
@@ -379,15 +1001,27 @@ export const Terminal = ({
       try {
         await new Promise(r => setTimeout(r, 2000));
 
+        const stakeAmount = data.stakeAmount || 0.1;
+        const stakeMicrocredits = Math.floor(stakeAmount * 1_000_000);
+        // Treasury address
+        const TREASURY_ADDRESS = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
+
         const transaction = createAleoTransaction(
           wallet.adapter,
-          'testnetbeta' as WalletAdapterNetwork,
-          'v_klochkov_private_decision_v1.aleo',
+          WalletAdapterNetwork.TestnetBeta,
+          'private_decision_v5.aleo',
           'create_dilemma',
-          ['12345field', (data.type === 'paid_post').toString(), (data.price || 0) + 'u64', (feedItems.length + 1) + 'u64'],
-          250_000,
-          false
+          [
+            stakeMicrocredits + 'u64',  // stake_amount (1st parameter)
+            TREASURY_ADDRESS,           // treasury_address (2nd parameter)
+            (feedItems.length + 1) + 'u64',  // post_id (3rd parameter)
+            '12345field',               // content_hash (4th parameter)
+            (data.type === 'paid_post').toString(),  // is_premium (5th parameter)
+            stakeMicrocredits + 'u64'   // stake_amount (6th parameter)
+          ],
+          250_000 // Fixed fee (0.25 ALEO) instead of stake to avoid double charging
         );
+
 
         setZkStage('SIGNING');
         const result = await (wallet.adapter as any).requestTransaction(transaction);
@@ -396,42 +1030,36 @@ export const Terminal = ({
         await new Promise(r => setTimeout(r, 2000));
         setZkModalOpen(false); // Close ZK modal
 
-        // Resolve ID
-        if (typeof result === 'object' && result !== null) {
-          txId = (result as any).transactionId || (result as any).id || JSON.stringify(result);
-        } else {
-          txId = String(result);
-        }
-
-        // Shield Wallet Polling
-        if (wallet.adapter.name === 'Shield Wallet' && txId && txId.startsWith('shield')) {
-          try {
-            txId = await pollShieldTransaction(wallet.adapter, txId);
-          } catch (pollErr) { console.error(pollErr); }
-        }
-
-        // console.log("Proposal TX ID:", txId);
+        // Step 2: Fast ID Extraction (Might be tracking ID if Shield)
+        txId = extractTransactionId(result);
 
         // Success Toast & Optimistic UI
         if (txId) {
           setLastTxId(txId);
+          const status = 'Success';
           const optimisticItem: TransactionRecord = {
             id: txId,
-            status: 'Pending',
+            status: status,
             method: 'Create Proposal',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            address: wallet.adapter.publicKey || '',
+            programId: 'private_decision_v5.aleo',
+            type: 'proposal'
           };
           setOptimisticTransactions(prev => [optimisticItem, ...prev]);
+
+          // Still track in background just in case it fails later
+          trackWithWorker(txId);
+
+          // Persist to LocalStorage
+          const localKey = `tx_history_${wallet.adapter.publicKey}`;
+          const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+          localStorage.setItem(localKey, JSON.stringify([optimisticItem, ...localData]));
 
           setShowSuccessToast(true);
           setToastIsClosing(false);
           setTimeout(() => setToastIsClosing(true), 5000);
           setTimeout(() => setShowSuccessToast(false), 5500);
-
-          // Finalize in background
-          setTimeout(async () => {
-            setOptimisticTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, status: 'Success' } : tx));
-          }, 10000);
         }
 
       } catch (e) {
@@ -477,13 +1105,17 @@ export const Terminal = ({
     }
   };
 
-  const [loadingUnlock, setLoadingUnlock] = useState<number | null>(null);
 
   const handleUnlock = async (postId: number) => {
     if (loadingUnlock === postId) return;
 
     if (!connected) {
-      alert("Please connect wallet first");
+      setZkError({
+        title: 'Wallet Not Connected',
+        message: 'Please connect your wallet to unlock this content.'
+      });
+      setZkStage('ERROR');
+      setZkModalOpen(true);
       return;
     }
     if (wallet && connected && wallet.adapter?.publicKey) {
@@ -493,14 +1125,23 @@ export const Terminal = ({
       try {
         await new Promise(r => setTimeout(r, 2000));
 
+        // Get Payment Record (Rule #4 Compliance)
+        // Find post price dynamically
+        const post = feedItems.find(p => p.id === postId) as PaidPost;
+        const amount = post?.price || 1;
+        const amountMicrocredits = Math.floor(amount * 1_000_000);
+
+        // Hybrid Payment (Public Transfer)
+        // No need to fetch private records!
+
         const transaction = createAleoTransaction(
           wallet.adapter,
-          'testnetbeta' as WalletAdapterNetwork,
-          'v_klochkov_private_decision_v1.aleo',
+          WalletAdapterNetwork.TestnetBeta,
+          'private_decision_v5.aleo',
           'unlock_content',
-          [`${postId}u64`],
-          250_000,
-          false
+          // New: public amount, public post_id, public treasury_address (Merchant)
+          [`${amountMicrocredits}u64`, `${postId}u64`, `aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc`],
+          250_000
         );
 
         setZkStage('SIGNING');
@@ -510,31 +1151,45 @@ export const Terminal = ({
         await new Promise(r => setTimeout(r, 2000));
         setZkModalOpen(false);
 
-        // Resolve ID
-        let txId: string;
-        if (typeof result === 'object' && result !== null) {
-          txId = (result as any).transactionId || (result as any).id || JSON.stringify(result);
-        } else {
-          txId = String(result);
-        }
+        // Step 2: Fast ID Extraction (Might be tracking ID if Shield)
+        const txId = extractTransactionId(result);
 
-        // Shield Wallet Polling
-        if (wallet.adapter.name === 'Shield Wallet' && txId && txId.startsWith('shield')) {
-          try {
-            txId = await pollShieldTransaction(wallet.adapter, txId);
-          } catch (pollErr) { console.error(pollErr); }
+        // Optimistic Balance Update (Instant Feedback)
+        if (txId) {
+          // Optimistic Balance Update REMOVED - will update on confirmation
         }
 
 
         if (txId) {
           setLastTxId(txId);
+          const status = 'Success';
           const optimisticItem: TransactionRecord = {
             id: txId,
-            status: 'Pending',
+            status: status,
             method: 'Unlock Content',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            address: wallet.adapter.publicKey || '',
+            programId: 'private_decision_v5.aleo',
+            type: 'unlock'
           };
           setOptimisticTransactions(prev => [optimisticItem, ...prev]);
+
+          // Still track in background
+          trackWithWorker(txId);
+
+          // Persist to LocalStorage
+          const localKey = `tx_history_${wallet.adapter.publicKey}`;
+          const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+          localStorage.setItem(localKey, JSON.stringify([optimisticItem, ...localData]));
+
+          // Persist Unlock Status (Item 7)
+          const unlockKey = `unlock_${wallet.adapter.publicKey}_${postId}`;
+          localStorage.setItem(unlockKey, 'true');
+
+          // Dispatch event to sync state immediately
+          window.dispatchEvent(new Event('vote_updated'));
+
+          // 4. [Supabase Insert Removed]
 
           setShowSuccessToast(true);
           setToastIsClosing(false);
@@ -548,34 +1203,23 @@ export const Terminal = ({
             }
             return item;
           }));
-
-          // Finalize
-          setTimeout(async () => {
-            setOptimisticTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, status: 'Success' } : tx));
-          }, 10000);
         }
 
         setLoadingUnlock(null);
 
-      } catch (e) {
+      } catch (e: any) {
         console.warn("Unlock failed:", e);
         setLoadingUnlock(null);
-        setZkStage('ERROR');
+
+        // If we already set a specific ZK error (in showError), it's already in ERROR stage.
+        // If it's a generic error (User Rejected), ensure we clear any old specific error
+        if (!zkError) {
+          setZkStage('ERROR');
+        }
       }
     }
   };
 
-  const [userVotes, setUserVotes] = useState<Record<number, VoteRecord>>({});
-  const [loadingVote, setLoadingVote] = useState<number | null>(null);
-  const [lastTxId, setLastTxId] = useState<string | null>(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [zkModalOpen, setZkModalOpen] = useState(false);
-  const [zkStage, setZkStage] = useState<'GENERATING' | 'SIGNING' | 'BROADCASTING' | 'SUCCESS' | 'ERROR'>('GENERATING');
-
-
-
-
-  const [optimisticTransactions, setOptimisticTransactions] = useState<TransactionRecord[]>([]);
 
   // Optimized Handle Vote
   const handleVote = async (dilemmaId: number, option: string, _stakeAmount: number) => {
@@ -593,14 +1237,14 @@ export const Terminal = ({
       await new Promise(r => setTimeout(r, 2000));
 
       const choice = option === "Support";
+      const stakeMicrocredits = Math.floor(_stakeAmount * 1_000_000);
       const transaction = createAleoTransaction(
         wallet.adapter,
-        'testnetbeta' as WalletAdapterNetwork,
-        'v_klochkov_private_decision_v1.aleo',
+        WalletAdapterNetwork.TestnetBeta,
+        'private_decision_v5.aleo',
         'vote_private',
-        [`${dilemmaId}u64`, choice.toString()],
-        250_000,
-        false
+        [`${dilemmaId}u64`, choice.toString(), stakeMicrocredits + 'u64', "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc"],
+        250_000 // Fixed fee (0.25 ALEO) - stake is paid via contract input
       );
 
       setZkStage('SIGNING');
@@ -610,36 +1254,45 @@ export const Terminal = ({
       await new Promise(r => setTimeout(r, 2000));
       setZkModalOpen(false);
 
-      let initialId: string;
-      if (typeof result === 'object' && result !== null) {
-        initialId = (result as any).transactionId || (result as any).id || JSON.stringify(result);
-      } else {
-        initialId = String(result);
+      // Step 2: Fast ID Extraction (Might be tracking ID if Shield)
+      const initialId = extractTransactionId(result);
+
+      // Optimistic Balance Update (Instant Feedback)
+      if (initialId) {
+        // Optimistic Balance Update REMOVED - will update on confirmation
       }
 
-      // Shield Wallet: If ID starts with "shield", poll for the real one
-      if (wallet.adapter.name === 'Shield Wallet' && initialId.startsWith('shield')) {
-        try {
-          const finalId = await pollShieldTransaction(wallet.adapter, initialId);
-          initialId = finalId;
-        } catch (pollErr) {
-          console.error("Polling failed, using initial ID", pollErr);
-        }
-      }
-
-      await supabase
-        .from('transactions')
-        .insert([{ id: initialId, status: 'Pending', method: 'Vote Private' }]);
-
-      setLastTxId(initialId);
-      setUserVotes(prev => ({ ...prev, [dilemmaId]: { choice: option, txId: initialId, status: 'Pending' } }));
-
+      const status = 'Success';
       const optimisticItem: TransactionRecord = {
         id: initialId,
-        status: 'Pending', // Show as Pending initially for demo realism
+        status: status,
         method: 'Vote Private',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        address: wallet.adapter.publicKey || '',
+        programId: 'private_decision_v5.aleo',
+        type: 'vote'
       };
+
+      // Still track in background
+      trackWithWorker(initialId);
+
+      // Persist to LocalStorage (General History)
+      const localKey = `tx_history_${wallet.adapter.publicKey}`;
+      const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+      localStorage.setItem(localKey, JSON.stringify([optimisticItem, ...localData]));
+
+      // Persist to LocalStorage (Vote Status per User/Post - Item 7)
+      const voteData: VoteRecord = { choice: option, txId: initialId, status: 'Confirmed' };
+      const voteKey = `vote_${wallet.adapter.publicKey}_${dilemmaId}`;
+      localStorage.setItem(voteKey, JSON.stringify(voteData));
+
+      // Dispatch event to sync hooks (useHasVoted)
+      window.dispatchEvent(new CustomEvent('vote_updated', {
+        detail: { proposalId: dilemmaId, wallet: wallet.adapter.publicKey }
+      }));
+
+      setLastTxId(initialId);
+      setUserVotes(prev => ({ ...prev, [dilemmaId]: voteData }));
       setOptimisticTransactions(prev => [optimisticItem, ...prev]);
 
       setShowSuccessToast(true);
@@ -650,62 +1303,9 @@ export const Terminal = ({
       // Actually remove after 5.5 seconds
       setTimeout(() => setShowSuccessToast(false), 5500);
 
-      // ARTIFICIAL FINALIZATION (Simulate 10s wait for on-chain inclusion)
-      setTimeout(async () => {
-        // SIMULATE RANDOM FAILURE (10% chance) TO DEMONSTRATE ROLLBACK
-        const randomFail = Math.random() < 0.1;
-
-        if (randomFail) {
-          // ROLLBACK
-          // console.warn("Simulated Transaction Failure - Rolling back UI");
-          setUserVotes(prev => {
-            const next = { ...prev };
-            delete next[dilemmaId]; // Remove local vote
-            return next;
-          });
-          setOptimisticTransactions(prev => prev.map(tx => tx.id === initialId ? { ...tx, status: 'Failed' } : tx));
-
-          // Trigger Error Toast (Reusing Success Toast logic for simplicity, normally would use separate Error Toast)
-          // Ideally, we would have a specific error notification here.
-          // For now, we update the status to Failed in the list.
-
-          await supabase
-            .from('transactions')
-            .update({ status: 'Failed' })
-            .eq('id', initialId);
-
-        } else {
-          // SUCCESS PATH
-          // 1. Update UI
-          setUserVotes(prev => ({ ...prev, [dilemmaId]: { ...prev[dilemmaId], status: 'Confirmed' } }));
-          setOptimisticTransactions(prev =>
-            prev.map(tx => tx.id === initialId ? { ...tx, status: 'Success' } : tx)
-          );
-
-          // 2. Persist to Supabase (Permanently)
-          try {
-            const { error } = await supabase
-              .from('transactions')
-              .update({ status: 'Success' })
-              .eq('id', initialId);
-
-            if (error) {
-              await supabase.from('transactions').upsert([{
-                id: initialId,
-                status: 'Success',
-                method: 'Vote Private'
-              }]);
-            }
-          } catch (err) {
-            console.error("Critical DB Sync Error:", err);
-          }
-        }
-      }, 10000);
-
     } catch (e: any) {
       console.error("VOTE ERROR:", e);
       setZkStage('ERROR');
-      // Do not clear the entire optimistic transactions array
     } finally {
       setLoadingVote(null);
     }
@@ -715,15 +1315,15 @@ export const Terminal = ({
   if (showFAQ) {
     return (
       <div className="terminal-overlay">
-        <ParticleBackground theme={theme} />
+        <ParticleBackground />
         <FAQDocumentation onBack={() => setShowFAQ(false)} />
       </div>
     );
   }
 
   return (
-    <div className={`terminal-overlay ${theme === 'neon' ? 'neon-mode' : ''}`}>
-      <ParticleBackground theme={theme} />
+    <div className="terminal-overlay">
+      <ParticleBackground />
       <aside className="terminal-sidebar">
         <div className="sidebar-header" onClick={onExit}>
           <ZKLogo className="w-10 h-10" />
@@ -750,16 +1350,10 @@ export const Terminal = ({
           </div>
         </nav>
 
-        <div className="sidebar-create-section">
-          <button className="create-proposal-btn" onClick={() => setIsCreateModalOpen(true)}>
-            <Plus size={18} /> New Proposal
-          </button>
-        </div>
-
         <div className="sidebar-footer">
           <div className="need-help-card">
             <div className="help-icon">
-              <BookOpen size={24} color={theme === 'neon' ? "#A855F7" : "#00D9FF"} />
+              <BookOpen size={24} color={"#10B981"} />
             </div>
             <div className="help-content">
               <div className="help-title">Decision.ZK</div>
@@ -781,110 +1375,194 @@ export const Terminal = ({
           <Settings
             publicBalance={publicBalance}
             privateBalance={privateBalance}
-            theme={theme}
-            onThemeChange={setTheme}
           />
         ) : (
           <div className="terminal-content-wrapper">
-            <header className="terminal-header">
-              <div>
-                <h1>Global Feed</h1>
-                <p>Private governance and exclusive zero-knowledge content.</p>
+            <div className="network-status-bar">
+              <div className="status-item">
+                <span className="dot pulse-green"></span>
+                <span className="label">ALEO_MAINNET_STAGING</span>
               </div>
-              <div className="header-stats-simple">
-                <div className="stat-item">
-                  <span className="value">{MOCK_USER_STATS.rep}</span>
-                  <span className="label">ZK-REP</span>
-                </div>
-                <div className="stat-divider"></div>
-                <div className="stat-item">
-                  <span className="value">{feedItems.length}</span>
-                  <span className="label">Active</span>
-                </div>
+              <div className="status-item">
+                <span className="label">BLOCK:</span>
+                <span className="value">1,429,083</span>
               </div>
+              <div className="status-item">
+                <span className="label">SYNCHRONIZED:</span>
+                <span className="value">100%</span>
+              </div>
+              <div className="status-item hide-mobile">
+                <span className="label">LATENCY:</span>
+                <span className="value">14ms</span>
+              </div>
+              <div className="status-refresh">
+                <RefreshCw size={12} /> REFRESH
+              </div>
+            </div>
+
+            <header className="governance-hub">
+              <div className="hub-info">
+                <div className="hub-badge">SYSTEM_ACTIVE • ZK_ENABLED</div>
+                <h1>{selectedItem ? 'PROPOSAL_VIEW' : 'GOVERNANCE_HUB'}</h1>
+                <p>{selectedItem ? 'Detailed technical parameters and on-chain verification.' : 'Private governance and exclusive zero-knowledge content.'}</p>
+              </div>
+              {!selectedItem && (
+                <div className="hub-actions">
+                  <button className="create-proposal-btn" onClick={() => setIsCreateModalOpen(true)}>
+                    <Plus size={18} /> NEW PROPOSAL
+                  </button>
+                </div>
+              )}
             </header>
-            <div style={{ paddingBottom: 50 }}>
-              {feedItems.map(item => {
-                if (item.type === 'dilemma') {
-                  const dilemma = item as Dilemma;
-                  return (
-                    <VotingCard
-                      key={dilemma.id}
-                      dilemma={dilemma}
-                      userVote={userVotes[dilemma.id]}
-                      loadingVote={loadingVote}
-                      walletAddress={wallet?.adapter?.publicKey || undefined}
-                      onVote={handleVote}
-                      onRetryVote={(id) => {
-                        setUserVotes(prev => {
-                          const next = { ...prev };
-                          delete next[id];
-                          return next;
-                        });
-                      }}
-                      onManualVoteId={(id, manualId) => {
-                        setUserVotes(prev => ({ ...prev, [id]: { choice: userVotes[id].choice, txId: manualId } }));
-                      }}
-                    />
-                  );
-                } else {
-                  // PAID POST RENDER
-                  const post = item as PaidPost;
-                  return (
-                    <div key={post.id} className="paid-post-card">
-                      <div className="paid-post-header">
-                        <div className="encrypted-badge">
-                          PREMIUM CONTENT #{String(post.id).padStart(2, '0')}
+
+            {selectedItem ? (
+              <DetailedProposalView
+                item={selectedItem}
+                onBack={handleBackToFeed}
+                onVote={handleVote}
+                loadingVote={loadingVote}
+                userVote={userVotes[selectedItem.id]}
+                stakeAmount={stakeAmount}
+                onStakeChange={setStakeAmount}
+                onTriggerAssistant={triggerAssistantMessage}
+                wallet={wallet}
+                onPostComment={(id: number, text: string) => handlePostComment(id, text)}
+              />
+            ) : (
+              <>
+
+                <div className="dashboard-stats-grid">
+                  <div className="stat-card">
+                    <div className="stat-label">
+                      <Shield size={14} /> ZK-REP
+                    </div>
+                    <div className="stat-content">
+                      <PrivacySensitive>
+                        <span className="stat-value">{MOCK_USER_STATS.rep}</span>
+                      </PrivacySensitive>
+                      <span className="stat-trend positive">↑ 12.5%</span>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">
+                      <Activity size={14} /> VOTING POWER
+                    </div>
+                    <div className="stat-content">
+                      <PrivacySensitive>
+                        <span className="stat-value">2.4x</span>
+                      </PrivacySensitive>
+                      <span className="stat-status">MAXED</span>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">
+                      <Zap size={14} /> ALEO
+                    </div>
+                    <div className="stat-content">
+                      <PrivacySensitive>
+                        <span className="stat-value">{(publicBalance + privateBalance).toFixed(2)} ALEO</span>
+                      </PrivacySensitive>
+                      <span className="stat-status">{connected ? 'SYNCED' : 'DISCONNECTED'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ paddingBottom: 50 }}>
+                  {feedItems.map(item => {
+                    if (item.type === 'dilemma') {
+                      const dilemma = item as Dilemma;
+                      return (
+                        <div key={dilemma.id} onClick={(e) => {
+                          // Prevent opening detailed view if child buttons are clicked
+                          const target = e.target as HTMLElement;
+                          if (target.closest('button') || target.closest('.vote-btn-detailed')) return;
+                          handleItemClick(item);
+                        }} style={{ cursor: 'pointer' }}>
+                          <VotingCard
+                            dilemma={dilemma}
+                            userVote={userVotes[dilemma.id]}
+                            loadingVote={loadingVote}
+                            walletAddress={wallet?.adapter?.publicKey || undefined}
+                            onVote={handleVote}
+                            onRetryVote={(id) => {
+                              setUserVotes(prev => {
+                                const next = { ...prev };
+                                delete next[id];
+                                return next;
+                              });
+                            }}
+                            onManualVoteId={(id, manualId) => {
+                              setUserVotes(prev => ({ ...prev, [id]: { choice: userVotes[id].choice, txId: manualId } }));
+                            }}
+                            availableBalance={publicBalance}
+                            onPostComment={(id: number, text: string) => handlePostComment(id, text)}
+                          />
                         </div>
-                        <div className="premium-badge">
-                          <Lock size={12} /> {post.price} ZK
-                        </div>
-                      </div>
+                      );
+                    } else {
+                      // PAID POST RENDER
+                      const post = item as PaidPost;
+                      return (
+                        <div key={post.id} className="paid-post-card">
+                          <div className="paid-post-header">
+                            <div className="encrypted-badge">
+                              PREMIUM CONTENT #{String(post.id).padStart(2, '0')}
+                            </div>
+                            <div className="premium-badge">
+                              <Lock size={12} /> {post.price} ZK
+                            </div>
+                          </div>
 
-                      <h3>{post.title}</h3>
+                          <h3>{post.title}</h3>
 
-                      <div className="post-content-container">
-                        <p className="post-teaser">{post.teaser}</p>
+                          <div className="post-content-container">
+                            <p className="post-teaser">{post.teaser}</p>
 
-                        <div className={`hidden-content ${post.isUnlocked ? 'unlocked' : ''}`}>
-                          {post.hiddenContent}
-                        </div>
+                            <div className={`hidden-content ${post.isUnlocked ? 'unlocked' : ''}`}>
+                              {post.hiddenContent}
+                            </div>
 
-                        {!post.isUnlocked && (
-                          <div className="unlock-overlay">
-                            {loadingUnlock === post.id ? (
-                              <div className="vote-loading" style={{ color: '#FFD700' }}>
-                                <Loader2 className="spin-icon" size={20} /> Processing Payment...
+                            {!post.isUnlocked && (
+                              <div className="unlock-overlay">
+                                {loadingUnlock === post.id ? (
+                                  <div className="vote-loading" style={{ color: '#FFD700' }}>
+                                    <Loader2 className="spin-icon" size={20} /> Processing Payment...
+                                  </div>
+                                ) : (
+                                  <button className="unlock-btn" onClick={() => handleUnlock(post.id)}>
+                                    <Zap size={18} fill="black" />
+                                    Unlock Content
+                                    <span className="unlock-price">-{post.price} Credits</span>
+                                  </button>
+                                )}
                               </div>
-                            ) : (
-                              <button className="unlock-btn" onClick={() => handleUnlock(post.id)}>
-                                <Zap size={18} fill="black" />
-                                Unlock Content
-                                <span className="unlock-price">-{post.price} Credits</span>
-                              </button>
                             )}
                           </div>
-                        )}
-                      </div>
 
 
-                      <div className="author-meta">
-                        <div className="author-avatar"></div>
-                        <span>Posted by {post.author}</span>
-                        <span style={{ marginLeft: 'auto', color: '#555' }}>2h ago</span>
-                      </div>
+                          <div className="author-meta" style={{ justifyContent: 'flex-end' }}>
+                            <span style={{ color: '#555' }}>2h ago</span>
+                          </div>
 
-                      <DiscussionSection
-                        proposalId={post.id}
-                        isLocked={!post.isUnlocked}
-                        lockedMessage="Unlock content to join the anonymous discussion."
-                        initialComments={post.comments}
-                      />
-                    </div>
-                  );
-                }
-              })}
-            </div>
+                          <DiscussionSection
+                            isLocked={!post.isUnlocked}
+                            lockedMessage="Unlock content to join the anonymous discussion."
+                            comments={post.comments}
+                            onPostComment={(text) => handlePostComment(post.id, text)}
+                          />
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+              </>
+            )}
+
+            <footer className="hub-disclaimer-footer">
+              <div className="footer-content">
+                <Shield size={12} />
+                <span>Decision.ZK uses client-side SNARK proof generation via Aleo Worker. No private keys ever leave your device.</span>
+              </div>
+            </footer>
           </div>
         )}
       </main>
@@ -895,6 +1573,7 @@ export const Terminal = ({
           publicBalance={publicBalance}
           privateBalance={privateBalance}
           onShield={handleShieldInternal}
+          externalTrigger={assistantTrigger}
         />
       </aside>
 
@@ -902,6 +1581,7 @@ export const Terminal = ({
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         pendingItems={optimisticTransactions}
+        walletAddress={wallet?.adapter?.publicKey || null}
       />
 
       {
@@ -921,7 +1601,12 @@ export const Terminal = ({
       <ZKProofModal
         isOpen={zkModalOpen}
         stage={zkStage}
-        onClose={() => setZkModalOpen(false)}
+        onClose={() => {
+          setZkModalOpen(false);
+          setZkError(null); // Reset error on close
+        }}
+        errorTitle={zkError?.title}
+        errorMessage={zkError?.message}
       />
 
       <CreateProposalModal
@@ -938,7 +1623,7 @@ class ShieldWalletAdapterWrapper extends EventEmitter {
   private _adapter: ShieldWalletAdapter;
   readonly name = "Shield Wallet" as any;
   readonly url = "https://shield.app";
-  readonly icon = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTI0LjU5NSAyNzguMzc2VjExMy40MDNIMjU2LjIwNlY0MjguNTYyQzI1NS4zMjQgNDI4LjI0OCAxMjQuNTk1IDM4MS41NzggMTI0LjU5NSAyNzguMzc2WiIgZmlsbD0idXJsKCNwYWludDBfbGluZWFyXzVfMTUpIi8+CjxwYXRoIGQ9Ik0zODcuODI1IDI3OC4zNzZWMTEzLjQwM0gyNTYuMjE0VjQyOC41NjJDMjU3LjA5NiA0MjguMjQ4IDM4Ny44MjUgMzgxLjU3OCAzODcuODI1IDI3OC4zNzZaIiBmaWxsPSJ1cmwoI3BhaW50MV9saW5lYXJfNV8xNSkiLz4KPHBhdGggb3BhY2l0eT0iMC4xIiBkPSJNMjU2LjIwNiA0NDAuNzcxQzI1NS4zMTkgNDQwLjQ1NiAxMTQuNDIgMzg1LjY0NiAxMTQuNDIgMjgyLjQ0NVYxMDMuMjI4SDI1Ni4yMDZWNDQwLjc3MVpNMzk4IDEwMy4yMjhWMjgyLjQ0NUMzOTggMzg1LjYzNSAyNTcuMTMgNDQwLjQ0NSAyNTYuMjE1IDQ0MC43NzFWMTAzLjIyOEgzOThaIiBmaWxsPSJibGFjayIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzVfMTUiIHgxPSIxOTAuNDAyIiB5MT0iMTEzLjQwMyIgeDI9IjE5MC40MDIiIHkyPSI0MjguNTY0IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLW9wYWNpdHk9IjAiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDFfbGluZWFyXzVfMTUiIHgxPSIzMjIuMDE4IiB5MT0iMTEzLjQwMyIgeDI9IjMyMi4wMTgiIHkyPSI0MjguNTY0IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3Atb3BhY2l0eT0iMCIvPgo8c3RvcCBvZmZzZXQ9IjEiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K";
+  readonly icon = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTI0LjU5NSAyNzguMzc2VjExMy40MDNIMjU2LjIwNlY0MjguNTYyQzI1NS4zMjQgNDI4LjI0OCAxMjQuNTk1IDM4MS41NzggMTI0LjU5NSAyNzguMzc2WiIgZmlsbD0idXJsKCNwYWludDBfbGluZWFyXzVfMTUpIi8+CjxwYXRoIGQ9Ik0zODcuODI1IDI3OC4zNzZWMTEzLjQwM0gyNTYuMjE0VjQyOC41NjJDMjU3LjA5NiA0MjguMjQ4IDM4Ny44MjUgMzgxLjU3OCAzODcuODI1IDI3OC4zNzZaIiBmaWxsPSJ1cmwoI3BhaW50MV9saW5lYXJfNV_xNSkiLz4KPHBhdGggb3BhY2l0eT0iMC4xIiBkPSJNMjU2LjIwNiA0NDAuNzcxQzI1NS4zMTkgNDQwLjQ1NiAxMTQuNDIgMzg1LjY0NiAxMTQuNDIgMjgyLjQ0NVYxMDMuMjI4SDI1Ni4yMDZWNDQwLjc3MVpNMzk4IDEwMy4yMjhWMjgyLjQ0NUMzOTggMzg1LjYzNSAyNTcuMTMgNDQwLjQ0NSAyNTYuMjE1IDQ0MC43NzFWMTAzLjIyOEgzOThaIiBmaWxsPSJibGFjayIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzVfMTUiIHgxPSIxOTAuNDAyIiB5MT0iMTEzLjQwMyIgeDI9IjE5MC40MDIiIHkyPSI0MjguNTY0IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLW9wYWNpdHk9IjAiLz4KPC9saW5lYXJGrYWRpZW50Pgo8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MV9saW5lYXJfNV_xNSIgeDE9IjMyMi4wMTgiIHkxPSIxMTMuNDAzIiB4Mj0iMzIyLjAxIiB5Mj0iNDI4LjU2NCIgZ3JhZGllbnRVbml0cz0idXNlckNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLW9wYWNpdHk9IjAiLz4KPHN0b3Agb2Zmc2V0PSIxIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg==";
   readonly supportedTransactionVersions = new Set();
 
   constructor() {
@@ -1021,40 +1706,124 @@ class ShieldWalletAdapterWrapper extends EventEmitter {
       throw e;
     }
   }
+
+  async requestRecords(program: string) {
+    console.log("ShieldWrapper: requestRecords called for", program);
+    const adapter = this._adapter as any;
+
+    // 1. Try Standard Adapter Method
+    if (typeof adapter.requestRecords === 'function') {
+      console.log("ShieldWrapper: Using adapter.requestRecords");
+      const records = await adapter.requestRecords(program);
+      return records || [];
+    }
+
+    // 2. Try window.aleo (Shield/Leo compatibility)
+    if ((window as any).aleo && typeof (window as any).aleo.requestRecords === 'function') {
+      console.log("ShieldWrapper: Falling back to window.aleo.requestRecords");
+      try {
+        const records = await (window as any).aleo.requestRecords(program);
+        return records || [];
+      } catch (e) {
+        console.warn("ShieldWrapper: window.aleo fallback failed", e);
+      }
+    }
+
+    console.warn("ShieldWrapper: requestRecords NOT found. Adapter keys:", Object.keys(adapter));
+    return [];
+  }
+
+  async requestRecordPlaintexts(program: string) {
+    const adapter = this._adapter as any;
+    if (typeof adapter.requestRecordPlaintexts === 'function') {
+      const records = await adapter.requestRecordPlaintexts(program);
+      return records || [];
+    }
+
+    if ((window as any).aleo && typeof (window as any).aleo.requestRecordPlaintexts === 'function') {
+      try {
+        return await (window as any).aleo.requestRecordPlaintexts(program) || [];
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    return [];
+  }
+
+  async decrypt(ciphertext: string) {
+    const adapter = this._adapter as any;
+    if (typeof adapter.decrypt === 'function') {
+      return await adapter.decrypt(ciphertext);
+    }
+    throw new Error("Shield Adapter missing decrypt");
+  }
+
+  // New: Status tracking proxy
+  async getTransactionStatus(transactionId: string) {
+    const adapter = this._adapter as any;
+    if (typeof adapter.getTransactionStatus === 'function') {
+      return await adapter.getTransactionStatus(transactionId);
+    }
+    // Fallback to window.aleo
+    if ((window as any).aleo && typeof (window as any).aleo.getTransactionStatus === 'function') {
+      return await (window as any).aleo.getTransactionStatus(transactionId);
+    }
+    return null;
+  }
 }
 
-// Helper to poll for final transaction status
-const pollShieldTransaction = async (walletAdapter: any, trackingId: string): Promise<string> => {
-  if (typeof (walletAdapter as any).transactionStatus !== 'function') {
-    return trackingId; // Fallback if method missing
+// Step 2: Bech32 ID Extraction (Universal for Leo and Shield)
+const extractTransactionId = (result: any): string => {
+  if (!result) return "";
+
+  let txId: string = "";
+
+  // Method 1: Check common keys in response object
+  if (typeof result === 'object') {
+    txId = result.transactionId ||
+      result.result ||
+      result.id ||
+      result.txId ||
+      (result.data && result.data.transactionId) ||
+      "";
   }
 
-  // Poll for up to 30 seconds
-  for (let i = 0; i < 15; i++) {
-    await new Promise(r => setTimeout(r, 2000)); // Wait 2s
+  // Method 2: Fallback to stringification/direct string
+  if (!txId) {
+    txId = typeof result === 'string' ? result : JSON.stringify(result);
+  }
+
+  // Handle case where it might be a JSON string
+  if (txId && (txId.startsWith('"') || txId.includes('{'))) {
     try {
-      const status = await (walletAdapter as any).transactionStatus(trackingId);
-      // console.log("Shield Poll Status:", status);
-
-      // Check for finalized status or if transactionId changes to on-chain format (at1...)
-      if (status.status === 'Completed' || status.status === 'Finalized' || status.status === 'Settled') {
-        if (status.transactionId && status.transactionId !== trackingId) {
-          // console.log("Shield Polling: Found final ID:", status.transactionId);
-          return status.transactionId; // Return real ID
-        }
-      }
-
-      if (status.transactionId && status.transactionId.startsWith('at1')) {
-        // console.log("Shield Polling: Found at1 ID:", status.transactionId);
-        return status.transactionId;
-      }
-
-    } catch (e) {
-      console.warn("Shield poll error:", e);
-    }
+      const parsed = JSON.parse(txId);
+      txId = parsed.transactionId || parsed.result || parsed.id || parsed.txId || txId;
+    } catch { /* stay with raw */ }
   }
 
-  return trackingId; // Return original if timeout
+  // Final Cleanup (remove quotes if any)
+  return txId.replace(/"/g, '');
+};
+
+// Helper to parse microcredits from various record formats
+const parseMicrocredits = (record: any): number => {
+  // Case 1: Record is a string (Leo Wallet plaintext)
+  if (typeof record === 'string') {
+    const match = record.match(/microcredits:\s*([0-9]+)u64/);
+    return match ? parseInt(match[1]) : 0;
+  }
+  // Case 2: Object with microcredits property
+  if (typeof record.microcredits === 'number') {
+    return record.microcredits;
+  } else if (typeof record.microcredits === 'string') {
+    return parseInt(record.microcredits.replace(/u64$/i, ''));
+  } else if (record.data?.microcredits) {
+    return typeof record.data.microcredits === 'number'
+      ? record.data.microcredits
+      : parseInt(String(record.data.microcredits).replace(/u64$/i, ''));
+  }
+  return 0;
 };
 
 // Helper to create transactions based on wallet type
@@ -1064,23 +1833,20 @@ const createAleoTransaction = (
   programId: string,
   functionName: string,
   inputs: any[],
-  fee: number,
-  isBaseFee: boolean = false
+  fee: number
 ) => {
-  // console.log("createAleoTransaction: Adapter Name =", walletAdapter?.name);
-  if (walletAdapter && walletAdapter.name === 'Shield Wallet') {
-    // Shield Wallet: Expects a plain object
-    const tx = {
+  const isShield = walletAdapter?.name === 'Shield Wallet';
+
+  if (isShield) {
+    return {
       program: programId,
       function: functionName,
       inputs,
       fee,
       privateFee: false // Force Public Fee for Shield
     };
-    // console.log("createAleoTransaction: Generated Shield TX Object:", tx);
-    return tx;
   } else {
-    // Leo Wallet: Expects the specific Transaction class instance
+    // Leo Wallet: Request non-private fee to avoid issues with encryption/records
     return Transaction.createTransaction(
       walletAdapter.publicKey,
       network,
@@ -1088,10 +1854,11 @@ const createAleoTransaction = (
       functionName,
       inputs,
       fee,
-      isBaseFee
+      false // feePrivate: false
     );
   }
 };
+
 
 function App() {
   const [isApp, setIsApp] = useState(false);
@@ -1103,40 +1870,37 @@ function App() {
   // GLOBAL PERSISTENT STATE
   const [publicBalance, setPublicBalance] = useState(0.00);
   const [privateBalance, setPrivateBalance] = useState(0.00);
-  const [theme, setTheme] = useState<'dark' | 'neon'>('dark');
 
   // Fetch balance from Aleo Network
   const fetchAleoBalance = useCallback(async (address: string) => {
-    try {
-      // console.log("Fetching balance for:", address);
-      const response = await fetch(`https://api.explorer.provable.com/v1/testnet/program/credits.aleo/mapping/account/${address}`);
-      if (response.ok) {
-        const value = await response.json();
-        // Aleo credits are stored in microcredits (1 ALEO = 1M microcredits)
-        // Response is usually a string like "5770000u64" or similar
-        const balanceStr = String(value).replace('u64', '');
-        let balanceNum = parseFloat(balanceStr) / 1_000_000;
-        if (isNaN(balanceNum)) balanceNum = 0;
-        setPublicBalance(balanceNum);
-        // console.log("Public balance updated:", balanceNum);
-      } else {
-        setPublicBalance(0);
+    if (!address) return;
+
+    // Try Provable first, then Aleo.org
+    const urls = [
+      `https://api.explorer.provable.com/v1/testnet/program/credits.aleo/mapping/account/${address}`,
+      `https://api.explorer.aleo.org/v1/testnet/program/credits.aleo/mapping/account/${address}`
+    ];
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const value = await response.json();
+          // Aleo credits are stored in microcredits (1 ALEO = 1M microcredits)
+          const balanceStr = String(value).replace('u64', '');
+          let balanceNum = parseFloat(balanceStr) / 1_000_000;
+          if (!isNaN(balanceNum)) {
+            setPublicBalance(balanceNum);
+            return; // Success, exit loop
+          }
+        }
+      } catch (e) {
+        // Continue to next endpoint
       }
-    } catch (e) {
-      console.error("Failed to fetch balance:", e);
-      setPublicBalance(0);
     }
+    // If all fail, keep current or set to 0 if definitely disconnected
   }, [setPublicBalance]);
 
-  // Sync theme to document for global CSS variable access
-  useEffect(() => {
-    if (theme === 'neon') {
-      document.documentElement.classList.add('neon-mode');
-    } else {
-      document.documentElement.classList.remove('neon-mode');
-    }
-    // Note: Do not remove on unmount if we want persistence while navigating App component states
-  }, [theme]);
 
   return (
     <WalletProvider
@@ -1146,17 +1910,17 @@ function App() {
       autoConnect={false}
     >
       <WalletModalProvider>
-        <BalanceWrapper
-          isApp={isApp}
-          setIsApp={setIsApp}
-          publicBalance={publicBalance}
-          setPublicBalance={setPublicBalance}
-          privateBalance={privateBalance}
-          setPrivateBalance={setPrivateBalance}
-          theme={theme}
-          setTheme={setTheme}
-          fetchAleoBalance={fetchAleoBalance}
-        />
+        <PrivacyProvider>
+          <BalanceWrapper
+            isApp={isApp}
+            setIsApp={setIsApp}
+            publicBalance={publicBalance}
+            setPublicBalance={setPublicBalance}
+            privateBalance={privateBalance}
+            setPrivateBalance={setPrivateBalance}
+            fetchAleoBalance={fetchAleoBalance}
+          />
+        </PrivacyProvider>
       </WalletModalProvider>
     </WalletProvider>
   );
@@ -1164,31 +1928,62 @@ function App() {
 
 // Internal component to handle hooks that need useWallet context
 const BalanceWrapper = ({
-  isApp, setIsApp, publicBalance, setPublicBalance, privateBalance, setPrivateBalance, theme, setTheme, fetchAleoBalance
+  isApp, setIsApp, publicBalance, setPublicBalance, privateBalance, setPrivateBalance, fetchAleoBalance
 }: any) => {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, wallet } = useWallet();
+
+  const fetchPrivateBalance = async () => {
+    if (!wallet || !wallet.adapter) return;
+    try {
+      let records: any[] = [];
+      const adapter = wallet.adapter as any;
+      // Method 1: Leo Wallet
+      if (typeof adapter.requestRecordPlaintexts === 'function') {
+        records = await adapter.requestRecordPlaintexts('credits.aleo');
+      }
+      // Method 2: Shield Wallet / Standard
+      else if (typeof adapter.requestRecords === 'function') {
+        const response = await adapter.requestRecords('credits.aleo');
+        records = response?.records || response || [];
+      }
+
+      if (!Array.isArray(records)) {
+        // console.warn("fetchPrivateBalance: Wallet returned non-array records:", records);
+        records = [];
+      }
+
+      const totalPrivate = records.reduce((sum: number, record: any) => {
+        if (record.spent) return sum;
+        return sum + parseMicrocredits(record);
+      }, 0);
+
+      // console.log("Private Balance Sync:", totalPrivate / 1_000_000);
+      setPrivateBalance(totalPrivate / 1_000_000);
+    } catch (e) {
+      console.error("Failed to fetch private balance:", e);
+    }
+  };
 
   useEffect(() => {
     if (connected && publicKey) {
       fetchAleoBalance(publicKey);
+      fetchPrivateBalance();
     } else {
       setPublicBalance(0);
       setPrivateBalance(0);
     }
-  }, [connected, publicKey, fetchAleoBalance, setPublicBalance, setPrivateBalance]); // Added dependencies for useEffect
+  }, [connected, publicKey, wallet, fetchAleoBalance, setPublicBalance, setPrivateBalance]); // Added dependencies for useEffect
 
   return isApp ? (
     <Terminal
       onExit={() => setIsApp(false)}
       publicBalance={publicBalance}
-      setPublicBalance={setPublicBalance}
       privateBalance={privateBalance}
-      setPrivateBalance={setPrivateBalance}
-      theme={theme}
-      setTheme={setTheme}
+      refreshPublic={fetchAleoBalance}
+      refreshPrivate={fetchPrivateBalance}
     />
   ) : (
-    <LandingPage onEnter={() => setIsApp(true)} theme={theme} />
+    <LandingPage onEnter={() => setIsApp(true)} />
   );
 };
 

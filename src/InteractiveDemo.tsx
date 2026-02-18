@@ -187,7 +187,7 @@ export const InteractiveDemo = () => {
 
                 <div className="demo-info">
                     <div className="info-badge">
-                        <Sparkles size={16} color="#00D9FF" />
+                        <Sparkles size={16} color="#10B981" />
                         <span>This is a simulation. Real voting happens in the app.</span>
                     </div>
                 </div>

@@ -40,7 +40,7 @@ export const SmartContractShowcase = () => {
                     <motion.div className="contract-card" variants={codeVariants}>
                         <div className="contract-header">
                             <div className="contract-icon">
-                                <Lock size={24} color="#00D9FF" />
+                                <Lock size={24} color="#10B981" />
                             </div>
                             <div>
                                 <h3>Anonymous Voting</h3>

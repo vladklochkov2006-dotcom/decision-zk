@@ -37,14 +37,14 @@ const stats: StatData[] = [
         value: 1247,
         suffix: '+',
         label: 'Votes Cast',
-        color: '#00D9FF'
+        color: '#10B981'
     },
     {
         icon: Shield,
         value: 99.9,
         suffix: '%',
         label: 'Privacy Guaranteed',
-        color: '#A855F7',
+        color: '#F59E0B',
         decimals: 1
     },
     {
@@ -60,7 +60,7 @@ const stats: StatData[] = [
         value: 100,
         suffix: '%',
         label: 'Decentralized',
-        color: '#00D9FF'
+        color: '#10B981'
     }
 ];
 

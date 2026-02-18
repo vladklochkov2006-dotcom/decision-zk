@@ -53,14 +53,14 @@
 .ai-bot-icon-container {
     width: 40px;
     height: 40px;
-    background: rgba(0, 217, 255, 0.1);
-    border: 1px solid rgba(0, 217, 255, 0.2);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #00D9FF;
-    box-shadow: 0 0 15px rgba(0, 217, 255, 0.1);
+    color: #10B981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
 }
 
 .ai-header-text h3 {
@@ -165,11 +165,11 @@
 }
 
 .ai-message-row.user .ai-message-bubble {
-    background: linear-gradient(135deg, rgba(0, 217, 255, 0.12) 0%, rgba(0, 217, 255, 0.05) 100%);
-    border: 1px solid rgba(0, 217, 255, 0.25);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.05) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.25);
     border-top-right-radius: 2px;
     color: #ffffff;
-    box-shadow: 0 4px 20px rgba(0, 217, 255, 0.15);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
 }
 
 /* Typing Indicator */
@@ -187,10 +187,10 @@
 .ai-dot {
     width: 5px;
     height: 5px;
-    background: #00D9FF;
+    background: #10B981;
     border-radius: 50%;
     animation: ai-dot-jump 1.4s infinite ease-in-out;
-    box-shadow: 0 0 8px rgba(0, 217, 255, 0.6);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
 .ai-dot:nth-child(2) {
@@ -225,7 +225,7 @@
 
 .ai-footer-label {
     font-size: 9px;
-    color: rgba(0, 217, 255, 0.4);
+    color: rgba(16, 185, 129, 0.4);
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 16px;
@@ -255,10 +255,10 @@
 }
 
 .ai-action-btn:hover:not(:disabled) {
-    background: rgba(0, 217, 255, 0.05);
-    border-color: rgba(0, 217, 255, 0.3);
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.3);
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 217, 255, 0.1);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.1);
 }
 
 .ai-action-btn:disabled {
@@ -267,7 +267,7 @@
 }
 
 .ai-action-btn svg {
-    color: #00D9FF;
+    color: #10B981;
     transition: transform 0.3s ease;
 }
 

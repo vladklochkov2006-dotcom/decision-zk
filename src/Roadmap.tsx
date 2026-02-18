@@ -10,7 +10,7 @@ export const Roadmap = () => {
                 <div className="roadmap-timeline">
                     <div className="roadmap-item">
                         <div className="roadmap-icon active">
-                            <Rocket size={24} color="#00D9FF" />
+                            <Rocket size={24} color="#10B981" />
                         </div>
                         <div className="roadmap-content">
                             <h3>Testnet Launch</h3>
@@ -23,7 +23,7 @@ export const Roadmap = () => {
 
                     <div className="roadmap-item">
                         <div className="roadmap-icon">
-                            <Coins size={24} color="#A855F7" />
+                            <Coins size={24} color="#F59E0B" />
                         </div>
                         <div className="roadmap-content">
                             <h3>ZK-Reputation Mining</h3>

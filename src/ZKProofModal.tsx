@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Shield, PenTool, Rocket, Check, Loader2, AlertCircle, X } from 'lucide-react';
 import './ZKProofModal.css';
 
@@ -6,9 +6,11 @@ interface ZKProofModalProps {
     isOpen: boolean;
     stage: 'GENERATING' | 'SIGNING' | 'BROADCASTING' | 'SUCCESS' | 'ERROR';
     onClose: () => void;
+    errorTitle?: string;
+    errorMessage?: string;
 }
 
-export const ZKProofModal: React.FC<ZKProofModalProps> = ({ isOpen, stage, onClose }) => {
+export const ZKProofModal: React.FC<ZKProofModalProps> = ({ isOpen, stage, onClose, errorTitle, errorMessage }) => {
 
     if (!isOpen) return null;
 
@@ -31,8 +33,8 @@ export const ZKProofModal: React.FC<ZKProofModalProps> = ({ isOpen, stage, onClo
                         <div className="error-icon-wrapper">
                             <AlertCircle size={48} color="#FF4D4D" />
                         </div>
-                        <h2>Transaction Failed</h2>
-                        <p>The transaction was rejected or an error occurred during execution. Please check your wallet and try again.</p>
+                        <h2>{errorTitle || "Transaction Failed"}</h2>
+                        <p>{errorMessage || "The transaction was rejected or an error occurred during execution. Please check your wallet and try again."}</p>
                         <button className="zk-modal-close-btn" onClick={onClose}>
                             Dismiss & Close
                         </button>

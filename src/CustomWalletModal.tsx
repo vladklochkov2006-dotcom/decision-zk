@@ -13,6 +13,21 @@ export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, on
     const { wallets, select } = useWallet();
     const [connectingWallet, setConnectingWallet] = React.useState<string | null>(null);
 
+    // Local assets for reliability
+    const WalletIcon = ({ name }: { name: string }) => {
+        if (name === 'Leo Wallet') {
+            return (
+                <img src="/leo-wallet.png" alt="Leo Wallet" style={{ width: 32, height: 32, borderRadius: 6 }} />
+            );
+        }
+        if (name === 'Shield Wallet') {
+            return (
+                <img src="/shield-wallet.png" alt="Shield Wallet" style={{ width: 32, height: 32, borderRadius: 6 }} />
+            );
+        }
+        return <div style={{ width: 32, height: 32, background: '#334155', borderRadius: '8px' }}></div>;
+    };
+
     React.useEffect(() => {
         if (isOpen) {
             setConnectingWallet(null);
@@ -69,11 +84,7 @@ export const CustomWalletModal: React.FC<CustomWalletModalProps> = ({ isOpen, on
                                 disabled={!!connectingWallet}
                             >
                                 <div className="wallet-icon">
-                                    {wallet.adapter.icon ? (
-                                        <img src={wallet.adapter.icon} alt={wallet.adapter.name} />
-                                    ) : (
-                                        <div style={{ width: 32, height: 32, background: '#ccc', borderRadius: '50%' }}></div>
-                                    )}
+                                    <WalletIcon name={wallet.adapter.name} />
                                 </div>
                                 <div className="wallet-info">
                                     <span className="wallet-name">{wallet.adapter.name}</span>

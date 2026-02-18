@@ -2,34 +2,30 @@ import React, { useState } from 'react';
 import {
     Wallet,
     Globe,
-    Moon,
     Bell,
     Shield,
     ExternalLink,
     Copy,
     Check,
-    Zap,
     ShieldCheck,
     Eye,
     Lock
 } from 'lucide-react';
 import { useWallet } from "@demox-labs/aleo-wallet-adapter-react";
+import { usePrivacy, PrivacySensitive } from "./contexts/PrivacyContext";
 import './Settings.css';
 
 interface SettingsProps {
     publicBalance?: number;
     privateBalance?: number;
-    theme?: 'dark' | 'neon';
-    onThemeChange?: (theme: 'dark' | 'neon') => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
     publicBalance = 5.77,
-    privateBalance = 0.00,
-    theme = 'dark',
-    onThemeChange
+    privateBalance = 0.00
 }) => {
     const { publicKey, wallet } = useWallet();
+    const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
     const [isCopied, setIsCopied] = useState(false);
 
     // Simulated settings state
@@ -68,9 +64,10 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                     <div className="settings-card wallet-card">
                         <div className="card-row">
-                            <div className="row-label">Address</div>
                             <div className="address-box">
-                                <code>{address}</code>
+                                <PrivacySensitive>
+                                    <code>{address}</code>
+                                </PrivacySensitive>
                                 <button className="icon-action-btn" onClick={handleCopy}>
                                     {isCopied ? <Check size={14} color="#00FF88" /> : <Copy size={14} />}
                                 </button>
@@ -79,8 +76,12 @@ export const Settings: React.FC<SettingsProps> = ({
                         <div className="card-grid">
                             <div className="mini-stat">
                                 <span className="label">Balance</span>
-                                <span className="value">{(publicBalance + privateBalance).toFixed(2)} ALEO</span>
-                                <span className="sub">Public: {publicBalance.toFixed(2)} | Private: {privateBalance.toFixed(2)}</span>
+                                <PrivacySensitive>
+                                    <span className="value">{(publicBalance + privateBalance).toFixed(2)} ALEO</span>
+                                </PrivacySensitive>
+                                <PrivacySensitive>
+                                    <span className="sub">Public: {publicBalance.toFixed(2)} | Private: {privateBalance.toFixed(2)}</span>
+                                </PrivacySensitive>
                             </div>
                             <div className="mini-stat">
                                 <span className="label">Network</span>
@@ -138,20 +139,20 @@ export const Settings: React.FC<SettingsProps> = ({
                         <div className="card-row flex-row">
                             <div className="row-info">
                                 <div className="info-title">Visual Protocol</div>
-                                <div className="info-desc">Select interface theme</div>
+                                <div className="info-desc">Select interface mode</div>
                             </div>
                             <div className="theme-toggle-mock">
                                 <button
-                                    className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                                    onClick={() => onThemeChange?.('dark')}
+                                    className={`theme-btn ${!isPrivacyMode ? 'active' : ''}`}
+                                    onClick={() => isPrivacyMode && togglePrivacyMode()}
                                 >
-                                    <Moon size={14} /> Dark
+                                    <Shield size={14} /> Standard
                                 </button>
                                 <button
-                                    className={`theme-btn ${theme === 'neon' ? 'active' : ''}`}
-                                    onClick={() => onThemeChange?.('neon')}
+                                    className={`theme-btn ${isPrivacyMode ? 'active' : ''}`}
+                                    onClick={() => !isPrivacyMode && togglePrivacyMode()}
                                 >
-                                    <Zap size={14} /> Neon
+                                    <Lock size={14} /> Privacy Mask
                                 </button>
                             </div>
                         </div>

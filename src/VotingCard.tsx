@@ -12,19 +12,20 @@ interface VotingCardProps {
     walletAddress?: string;
     onVote: (id: number, choice: string, stakeAmount: number) => void;
     onRetryVote: (id: number) => void;
-    onManualVoteId: (id: number, txId: string) => void;
+    onPostComment?: (id: number, text: string) => void;
+    onManualVoteId?: (id: number, txId: string) => void;
+    availableBalance?: number;
 }
 
 export const VotingCard: React.FC<VotingCardProps> = ({
     dilemma,
     userVote,
     loadingVote,
-    walletAddress,
     onVote,
     onRetryVote,
-    onManualVoteId
+    onPostComment,
 }) => {
-    const [stakeAmount, setStakeAmount] = useState(0);
+    const [stakeAmount, setStakeAmount] = useState(0.1);
     const [selectedOptionDuringLoading, setSelectedOptionDuringLoading] = useState<string | null>(null);
 
     // Helpers for icons
@@ -72,19 +73,24 @@ export const VotingCard: React.FC<VotingCardProps> = ({
             </div>
 
             {/* 4. Staking Slider */}
-            <div className="neon-slider-container">
+            <div className="range-slider-container" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between text-xs text-gray-500 mb-2 uppercase tracking-wider font-bold">
-                    <span>Stake Reputation</span>
-                    <span className="text-cyan-400">{stakeAmount.toFixed(1)} ZK-REP</span>
+                    <div className="flex items-center gap-2">
+                        <span>Stake Aleo</span>
+                    </div>
+                    <span className="text-cyan-400">{stakeAmount.toFixed(1)} ALEO ({(Math.sqrt(stakeAmount)).toFixed(2)} VP)</span>
                 </div>
                 <input
                     type="range"
-                    className="neon-slider"
-                    min="0"
-                    max="10"
-                    step="0.5"
-                    value={stakeAmount}
-                    onChange={(e) => setStakeAmount(parseFloat(e.target.value))}
+                    className="range-slider"
+                    min="0.1"
+                    step="0.1"
+                    value={stakeAmount || 0.1}
+                    onChange={(e) => {
+                        e.stopPropagation();
+                        setStakeAmount(parseFloat(e.target.value));
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
                     disabled={!!userVote || loadingVote === dilemma.id || dilemma.status !== 'Active'}
                     style={{ opacity: dilemma.status !== 'Active' ? 0.5 : 1, cursor: dilemma.status !== 'Active' ? 'not-allowed' : 'pointer' }}
                 />
@@ -101,17 +107,18 @@ export const VotingCard: React.FC<VotingCardProps> = ({
                         <VoteConfirmation
                             choice={userVote.choice}
                             txId={userVote.txId}
-                            userAddress={walletAddress}
                             onRetry={() => onRetryVote(dilemma.id)}
-                            onManualIdEntered={(manualId) => onManualVoteId(dilemma.id, manualId)}
                         />
-                        <div style={{ marginTop: 0 }}>
-                            <DiscussionSection proposalId={dilemma.id} initialComments={dilemma.comments} />
+                        <div style={{ marginTop: 0 }} onClick={(e) => e.stopPropagation()}>
+                            <DiscussionSection
+                                comments={dilemma.comments}
+                                onPostComment={(text: string) => onPostComment?.(dilemma.id, text)}
+                            />
                         </div>
                     </div>
                 ) : dilemma.options ? (
                     // Multi-option support
-                    dilemma.options.map((option, idx) => (
+                    dilemma.options.map((option: string, idx: number) => (
                         <button
                             key={idx}
                             className="btn-vote-outline"
@@ -156,12 +163,12 @@ export const VotingCard: React.FC<VotingCardProps> = ({
             </div>
 
             {!userVote && (
-                <div style={{ marginTop: 20 }}>
+                <div style={{ marginTop: 20 }} onClick={(e) => e.stopPropagation()}>
                     <DiscussionSection
-                        proposalId={dilemma.id}
                         isLocked={true}
                         lockedMessage="Vote to join the anonymous discussion."
-                        initialComments={dilemma.comments}
+                        comments={dilemma.comments}
+                        onPostComment={(text: string) => onPostComment?.(dilemma.id, text)}
                     />
                 </div>
             )}

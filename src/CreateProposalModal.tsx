@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Lock, Check, Sparkles, Plus, Trash2, FileText, LayoutTemplate } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { validateContent } from './utils/validation';
 
 interface CreateProposalModalProps {
     isOpen: boolean;
@@ -12,15 +13,16 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
     const [type, setType] = useState<'proposal' | 'paid_post'>('proposal');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [stakeAmount, setStakeAmount] = useState(50);
+    const [stakeAmount, setStakeAmount] = useState(0.1);
     const [options, setOptions] = useState(['Yes', 'No']); // For Proposal
 
     // For Paid Post
     const [teaser, setTeaser] = useState('');
     const [hiddenContent, setHiddenContent] = useState('');
-    const [price, setPrice] = useState(50);
+    const [price, setPrice] = useState(1);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     const handleAddOption = () => {
         if (options.length < 5) {
@@ -41,12 +43,49 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
         setOptions(newOptions);
     };
 
+    const handleInvalid = (e: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        (e.target as HTMLInputElement | HTMLTextAreaElement).setCustomValidity('Please fill out this field.');
+    };
+
+    const handleInput = (e: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        (e.target as HTMLInputElement | HTMLTextAreaElement).setCustomValidity('');
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setValidationError(null);
 
-        if (type === 'proposal' && options.some(opt => !opt.trim())) return;
+        // Validation for Title
+        const titleVal = validateContent(title, { fieldName: 'Title' });
+        if (!titleVal.isValid) {
+            setValidationError(titleVal.error || 'Invalid Title');
+            return;
+        }
 
-        setIsSubmitting(true);
+        if (type === 'proposal') {
+            if (options.some(opt => !opt.trim())) {
+                setValidationError('All options must be filled.');
+                return;
+            }
+            if (description.trim()) {
+                const descVal = validateContent(description, { fieldName: 'Description' });
+                if (!descVal.isValid) {
+                    setValidationError(descVal.error || 'Invalid Description');
+                    return;
+                }
+            }
+        } else {
+            const teaserVal = validateContent(teaser, { fieldName: 'Teaser' });
+            if (!teaserVal.isValid) {
+                setValidationError(teaserVal.error || 'Invalid Teaser');
+                return;
+            }
+            const contentVal = validateContent(hiddenContent, { fieldName: 'Hidden Content' });
+            if (!contentVal.isValid) {
+                setValidationError(contentVal.error || 'Invalid Hidden Content');
+                return;
+            }
+        }
 
         setIsSubmitting(true);
 
@@ -61,7 +100,7 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
         // Reset fields
         setTitle('');
         setDescription('');
-        setStakeAmount(50);
+        setStakeAmount(0.1);
         setOptions(['Yes', 'No']);
         setTeaser('');
         setHiddenContent('');
@@ -85,7 +124,7 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                         </button>
 
                         <div className="modal-header">
-                            {type === 'proposal' ? <Lock size={32} color="#00D9FF" /> : <Lock size={32} color="#FFD700" />}
+                            {type === 'proposal' ? <Lock size={32} color="#10B981" /> : <Lock size={32} color="#FFD700" />}
                             <h2>Create New Content</h2>
                             <p>All content is encrypted and anonymously posted.</p>
                         </div>
@@ -105,6 +144,12 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                             </button>
                         </div>
 
+                        {validationError && (
+                            <div className="validation-error" style={{ marginBottom: '15px' }}>
+                                {validationError}
+                            </div>
+                        )}
+
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
                                 <label>{type === 'proposal' ? 'Question / Proposal Title' : 'Post Title'}</label>
@@ -114,6 +159,8 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder={type === 'proposal' ? "e.g., Should we increase rewards?" : "e.g., Alpha Leak: New Partnership"}
                                     required
+                                    onInvalid={handleInvalid}
+                                    onInput={handleInput}
                                     autoFocus
                                 />
                             </div>
@@ -140,6 +187,8 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                                                         onChange={(e) => handleOptionChange(index, e.target.value)}
                                                         placeholder={`Option ${index + 1}`}
                                                         required
+                                                        onInvalid={handleInvalid}
+                                                        onInput={handleInput}
                                                     />
                                                     {options.length > 2 && (
                                                         <button type="button" className="btn-remove-option" onClick={() => handleRemoveOption(index)}>
@@ -156,17 +205,32 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                                         )}
                                     </div>
                                     <div className="form-group">
-                                        <label>Stake Amount (ZK-Tokens)</label>
-                                        <div className="range-container">
-                                            <input
-                                                type="range"
-                                                min="10"
-                                                max="500"
-                                                step="10"
-                                                value={stakeAmount}
-                                                onChange={(e) => setStakeAmount(Number(e.target.value))}
-                                            />
-                                            <div className="range-value">{stakeAmount} ZK</div>
+                                        <label>Stake Amount (ALEO)</label>
+                                        <div className="price-selection-group">
+                                            <div className="price-input-wrapper emerald">
+                                                <input
+                                                    type="number"
+                                                    min="0.1"
+                                                    max="1000"
+                                                    step="0.1"
+                                                    value={stakeAmount}
+                                                    onChange={(e) => setStakeAmount(Number(e.target.value))}
+                                                    className="price-field-input"
+                                                />
+                                                <span className="price-field-suffix">ALEO</span>
+                                            </div>
+                                            <div className="quick-price-choices">
+                                                {[0.1, 0.5, 1, 5, 10].map((val) => (
+                                                    <button
+                                                        key={val}
+                                                        type="button"
+                                                        className={`price-choice-btn emerald ${stakeAmount === val ? 'active' : ''}`}
+                                                        onClick={() => setStakeAmount(val)}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </>
@@ -180,6 +244,8 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                                             placeholder="Hook the reader without revealing the secret..."
                                             rows={2}
                                             required
+                                            onInvalid={handleInvalid}
+                                            onInput={handleInput}
                                         />
                                     </div>
                                     <div className="form-group">
@@ -190,22 +256,38 @@ export const CreateProposalModal = ({ isOpen, onClose, onSubmit }: CreateProposa
                                             placeholder="The valuable alpha, code, or data..."
                                             rows={4}
                                             required
+                                            onInvalid={handleInvalid}
+                                            onInput={handleInput}
                                             style={{ borderColor: '#FFD700' }}
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label>Unlock Price (Credits)</label>
-                                        <div className="range-container">
-                                            <input
-                                                type="range"
-                                                min="1"
-                                                max="1000"
-                                                step="1"
-                                                value={price}
-                                                onChange={(e) => setPrice(Number(e.target.value))}
-                                                className="gold-range"
-                                            />
-                                            <div className="range-value" style={{ color: '#FFD700' }}>{price} Credits</div>
+                                        <label>Unlock Price (ALEO)</label>
+                                        <div className="price-selection-group">
+                                            <div className="price-input-wrapper">
+                                                <input
+                                                    type="number"
+                                                    min="0.1"
+                                                    max="1000"
+                                                    step="0.1"
+                                                    value={price}
+                                                    onChange={(e) => setPrice(Number(e.target.value))}
+                                                    className="price-field-input"
+                                                />
+                                                <span className="price-field-suffix">ALEO</span>
+                                            </div>
+                                            <div className="quick-price-choices">
+                                                {[0.1, 0.5, 1, 5, 10].map((val) => (
+                                                    <button
+                                                        key={val}
+                                                        type="button"
+                                                        className={`price-choice-btn ${price === val ? 'active' : ''}`}
+                                                        onClick={() => setPrice(val)}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </>

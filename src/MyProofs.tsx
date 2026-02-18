@@ -1,4 +1,5 @@
 import { Check, Clock, Shield } from "lucide-react";
+import { PrivacySensitive } from "./contexts/PrivacyContext";
 import "./App.css";
 
 export const MyProofs = ({ stats }: { stats?: any }) => {
@@ -41,17 +42,23 @@ export const MyProofs = ({ stats }: { stats?: any }) => {
                 </div>
                 <div className="header-stats-simple">
                     <div className="stat-item">
-                        <span className="value">{displayStats.rep}</span>
+                        <PrivacySensitive>
+                            <span className="value">{displayStats.rep}</span>
+                        </PrivacySensitive>
                         <span className="label">ZK-REP</span>
                     </div>
                     <div className="stat-divider"></div>
                     <div className="stat-item">
-                        <span className="value">+{displayStats.alpha}</span>
+                        <PrivacySensitive>
+                            <span className="value">+{displayStats.alpha}</span>
+                        </PrivacySensitive>
                         <span className="label">Alpha Rewards</span>
                     </div>
                     <div className="stat-divider"></div>
                     <div className="stat-item">
-                        <span className="value">+{displayStats.delegation}</span>
+                        <PrivacySensitive>
+                            <span className="value">+{displayStats.delegation}</span>
+                        </PrivacySensitive>
                         <span className="label">Delegation</span>
                     </div>
                 </div>
@@ -61,7 +68,7 @@ export const MyProofs = ({ stats }: { stats?: any }) => {
                 {proofs.map((proof, index) => (
                     <div key={index} className="proof-card">
                         <div className="proof-icon">
-                            <Shield size={20} color="#00D9FF" />
+                            <Shield size={20} color="#10B981" />
                         </div>
                         <div className="proof-details">
                             <div className="proof-title">
@@ -77,7 +84,9 @@ export const MyProofs = ({ stats }: { stats?: any }) => {
                             <div className="proof-time">
                                 <Clock size={14} /> {proof.time}
                             </div>
-                            <div className="proof-rep">{proof.reputation}</div>
+                            <PrivacySensitive>
+                                <div className="proof-rep">{proof.reputation}</div>
+                            </PrivacySensitive>
                         </div>
                     </div>
                 ))}

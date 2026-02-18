@@ -30,7 +30,7 @@ export interface PaidPost {
     hiddenContent: string;
     price: number;
     isUnlocked: boolean;
-    author: string;
+    author?: string;
     comments?: Comment[];
 }
 

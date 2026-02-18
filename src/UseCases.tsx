@@ -12,7 +12,7 @@ export const UseCases = () => {
                 <div className="use-cases-grid">
                     <div className="use-case-card">
                         <div className="use-case-icon">
-                            <Building2 size={32} color="#00D9FF" />
+                            <Building2 size={32} color="#10B981" />
                         </div>
                         <h3>Corporate Governance</h3>
                         <p>
@@ -25,7 +25,7 @@ export const UseCases = () => {
 
                     <div className="use-case-card">
                         <div className="use-case-icon">
-                            <Lightbulb size={32} color="#A855F7" />
+                            <Lightbulb size={32} color="#F59E0B" />
                         </div>
                         <h3>Strategic Proposals</h3>
                         <p>
@@ -38,7 +38,7 @@ export const UseCases = () => {
 
                     <div className="use-case-card">
                         <div className="use-case-icon">
-                            <MessageSquare size={32} color="#00D9FF" />
+                            <MessageSquare size={32} color="#10B981" />
                         </div>
                         <h3>Whistleblowing & Feedback</h3>
                         <p>

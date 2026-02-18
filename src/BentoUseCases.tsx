@@ -40,7 +40,7 @@ export const BentoUseCases = () => {
                 <motion.div className="bento-grid" variants={containerVariants}>
                     <motion.div className="bento-card bento-large" variants={cardVariants}>
                         <div className="bento-icon">
-                            <AlertCircle size={32} color="#00D9FF" />
+                            <AlertCircle size={32} color="#10B981" />
                         </div>
                         <h3>Whistleblowing</h3>
                         <p>
@@ -53,7 +53,7 @@ export const BentoUseCases = () => {
 
                     <motion.div className="bento-card" variants={cardVariants}>
                         <div className="bento-icon">
-                            <TrendingUp size={32} color="#A855F7" />
+                            <TrendingUp size={32} color="#F59E0B" />
                         </div>
                         <h3>Investment DAOs</h3>
                         <p>
@@ -65,7 +65,7 @@ export const BentoUseCases = () => {
 
                     <motion.div className="bento-card" variants={cardVariants}>
                         <div className="bento-icon">
-                            <Vote size={32} color="#00D9FF" />
+                            <Vote size={32} color="#10B981" />
                         </div>
                         <h3>Governance</h3>
                         <p>

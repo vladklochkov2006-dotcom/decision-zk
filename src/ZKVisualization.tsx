@@ -26,7 +26,7 @@ export const ZKVisualization = () => {
                 <div className="zk-cards-wrapper">
                     <div className="zk-card zk-card-left">
                         <div className="zk-card-header">
-                            <Eye size={20} color="#00D9FF" />
+                            <Eye size={20} color="#10B981" />
                             <span>Your Choice</span>
                         </div>
                         <div className="zk-card-body">
@@ -38,7 +38,7 @@ export const ZKVisualization = () => {
                             </div>
                             {isShielded && (
                                 <div className="shielded-message">
-                                    <EyeOff size={24} color="#00D9FF" />
+                                    <EyeOff size={24} color="#10B981" />
                                     <p>Hidden from public</p>
                                 </div>
                             )}
@@ -49,12 +49,12 @@ export const ZKVisualization = () => {
                     </div>
 
                     <div className="zk-arrow">
-                        <ArrowRight size={32} color="#A855F7" />
+                        <ArrowRight size={32} color="#F59E0B" />
                     </div>
 
                     <div className="zk-card zk-card-right">
                         <div className="zk-card-header">
-                            <Shield size={20} color="#A855F7" />
+                            <Shield size={20} color="#F59E0B" />
                             <span>Encrypted Record</span>
                         </div>
                         <div className="zk-card-body">

@@ -1,13 +1,26 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Shield, Smartphone, Globe, Download, Share2, Copy, Check, Loader2, QrCode, X } from "lucide-react";
+import { useWallet } from "@demox-labs/aleo-wallet-adapter-react";
+import { PrivacySensitive } from "./contexts/PrivacyContext";
 import "./App.css";
 
 export const Identity = ({ stats }: { stats?: any }) => {
+    const { publicKey } = useWallet();
     const [isProving, setIsProving] = useState(false);
     const [proofStatus, setProofStatus] = useState<'none' | 'generating' | 'sent' | 'verified'>('none');
     const [showQR, setShowQR] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
+
+    const address = publicKey || "aleo1y06snde...z2hvxqyluw5m";
+    const truncatedAddress = publicKey ? `${publicKey.slice(0, 6)}...${publicKey.slice(-4)}` : "aleo1...9x5a";
 
     const displayStats = stats || { rep: 92.4, age: "42d", proposals: 5, votingPower: "4.5x" };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(address);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
     const handleProveIdentity = () => {
         setProofStatus('generating');
@@ -37,7 +50,7 @@ export const Identity = ({ stats }: { stats?: any }) => {
                     <div className="id-header">
                         <div className="id-avatar-wrapper">
                             <div className="id-avatar pulse-avatar">
-                                <Shield size={40} color="#00D9FF" />
+                                <Shield size={40} color="#10B981" />
                             </div>
                             <div className="id-shield-status">
                                 <Check size={10} /> Active Shield
@@ -46,9 +59,11 @@ export const Identity = ({ stats }: { stats?: any }) => {
                         <div className="id-info">
                             <h3>Anonymous User</h3>
                             <div className="id-shield-label">Identity Shield: Active</div>
-                            <div className="id-address">
-                                <span>aleo1...9x5a</span>
-                                <Copy size={14} className="copy-icon" />
+                            <div className="id-address" onClick={handleCopy}>
+                                <PrivacySensitive>
+                                    <span>{truncatedAddress}</span>
+                                </PrivacySensitive>
+                                {isCopied ? <Check size={14} color="#00FF88" className="copy-icon" /> : <Copy size={14} className="copy-icon" />}
                             </div>
                         </div>
                         <div className="id-badge">
@@ -59,15 +74,21 @@ export const Identity = ({ stats }: { stats?: any }) => {
                     <div className="id-stats">
                         <div className="id-stat-box">
                             <span className="label">ZK-REP</span>
-                            <span className="value">{displayStats.rep}</span>
+                            <PrivacySensitive>
+                                <span className="value">{displayStats.rep}</span>
+                            </PrivacySensitive>
                         </div>
                         <div className="id-stat-box highlight">
                             <span className="label">Voting Power</span>
-                            <span className="value">{displayStats.votingPower}</span>
+                            <PrivacySensitive>
+                                <span className="value">{displayStats.votingPower}</span>
+                            </PrivacySensitive>
                         </div>
                         <div className="id-stat-box">
                             <span className="label">Delegated To You</span>
-                            <span className="value">12.5</span>
+                            <PrivacySensitive>
+                                <span className="value">12.5</span>
+                            </PrivacySensitive>
                         </div>
                     </div>
 
@@ -134,7 +155,7 @@ export const Identity = ({ stats }: { stats?: any }) => {
                     <div className="qr-modal" onClick={e => e.stopPropagation()}>
                         <button className="close-qr" onClick={() => setShowQR(false)}><X size={20} /></button>
                         <div className="qr-header">
-                            <QrCode size={48} color="#00D9FF" />
+                            <QrCode size={48} color="#10B981" />
                             <h3>Selective Disclosure</h3>
                         </div>
                         <p>

@@ -1,5 +1,4 @@
-import React from 'react';
-import { CheckCircle, X, Terminal } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
 import './TransactionSuccess.css';
 
 interface TransactionSuccessProps {
@@ -9,7 +8,7 @@ interface TransactionSuccessProps {
     onViewHistory: () => void;
 }
 
-export const TransactionSuccess: React.FC<TransactionSuccessProps> = ({ onClose, onViewHistory, isClosing }) => {
+export const TransactionSuccess: React.FC<TransactionSuccessProps> = ({ onClose, isClosing }) => {
     return (
         <div className={`tx-success-container ${isClosing ? 'closing' : ''}`}>
             <div className="tx-success-card basic-toast">
@@ -22,14 +21,12 @@ export const TransactionSuccess: React.FC<TransactionSuccessProps> = ({ onClose,
                         <CheckCircle size={24} color="#00FF88" />
                     </div>
                     <div className="header-text">
-                        <h3>Vote Successfully Broadcasted</h3>
-                        <p>Your choices are now secured via ZK-Proof.</p>
+                        <h3>Transaction Confirmed</h3>
+                        <p>Your transaction has been successfully processed by the wallet.</p>
                     </div>
                 </div>
 
-                <button className="view-history-btn" onClick={onViewHistory}>
-                    <Terminal size={14} /> View in System Logs
-                </button>
+                {/* Technical button removed per request */}
             </div>
         </div>
     );

@@ -16,8 +16,8 @@ export const ZKLogo: React.FC<ZKLogoProps> = ({ className = "w-10 h-10" }) => {
                 <defs>
                     {/* Gradient Definition */}
                     <linearGradient id="zk-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#00FFFF" />
-                        <stop offset="100%" stopColor="#FF00FF" />
+                        <stop offset="0%" stopColor="#10B981" />
+                        <stop offset="100%" stopColor="#F59E0B" />
                     </linearGradient>
 
                     {/* Glow Filter */}
@@ -46,7 +46,7 @@ export const ZKLogo: React.FC<ZKLogoProps> = ({ className = "w-10 h-10" }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     filter="url(#zk-glow)"
-                    style={{ filter: 'drop-shadow(0 0 15px rgba(0, 255, 255, 0.5))' }}
+                    style={{ filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.4))' }}
                 />
 
                 {/* Interior Circuit Nodes */}

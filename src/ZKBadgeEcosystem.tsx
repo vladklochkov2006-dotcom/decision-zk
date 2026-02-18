@@ -13,7 +13,7 @@ export const ZKBadgeEcosystem = () => {
                     <div className="zkbadge-visual">
                         <div className="badge-card">
                             <div className="badge-header">
-                                <Shield size={24} color="#00D9FF" />
+                                <Shield size={24} color="#10B981" />
                                 <span>ZK-Reputation Badge</span>
                             </div>
                             <div className="badge-stats">
@@ -50,15 +50,15 @@ export const ZKBadgeEcosystem = () => {
                         </p>
                         <div className="zkbadge-features">
                             <div className="feature-item">
-                                <TrendingUp size={20} color="#00D9FF" />
+                                <TrendingUp size={20} color="#10B981" />
                                 <span>Voting power grows with participation score</span>
                             </div>
                             <div className="feature-item">
-                                <Shield size={20} color="#A855F7" />
+                                <Shield size={20} color="#F59E0B" />
                                 <span>Identity remains mathematically protected</span>
                             </div>
                             <div className="feature-item">
-                                <Award size={20} color="#00D9FF" />
+                                <Award size={20} color="#10B981" />
                                 <span>Non-transferable reputation prevents gaming</span>
                             </div>
                         </div>

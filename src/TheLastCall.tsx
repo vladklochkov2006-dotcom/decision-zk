@@ -41,7 +41,7 @@ export const TheLastCall = ({ onConnect, onEnter, connected }: TheLastCallProps)
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         style={connected ? {
-                            background: 'linear-gradient(135deg, #00D9FF 0%, #A855F7 100%)',
+                            background: 'linear-gradient(135deg, #10B981 0%, #F59E0B 100%)',
                             boxShadow: '0 0 30px rgba(0, 217, 255, 0.4)'
                         } : {}}
                     >

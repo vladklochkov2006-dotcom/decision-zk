@@ -56,7 +56,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #00FF88, #00D9FF);
+    background: linear-gradient(90deg, #00FF88, #10B981);
 }
 
 .close-btn {
@@ -103,7 +103,7 @@
 .privacy-subtitle {
     margin: 4px 0 0 0;
     font-size: 0.75rem;
-    color: #00D9FF;
+    color: #10B981;
     display: flex;
     align-items: center;
     font-weight: 500;
@@ -277,10 +277,10 @@
 }
 
 .view-history-btn {
-    background: rgba(0, 217, 255, 0.05);
-    border: 1px solid rgba(0, 217, 255, 0.2);
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: 6px;
-    color: #00D9FF;
+    color: #10B981;
     padding: 8px;
     font-size: 0.8rem;
     font-weight: 500;
@@ -294,7 +294,7 @@
 }
 
 .view-history-btn:hover {
-    background: rgba(0, 217, 255, 0.1);
+    background: rgba(16, 185, 129, 0.1);
     transform: translateY(-1px);
 }
 

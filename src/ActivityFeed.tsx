@@ -66,8 +66,8 @@ export const ActivityFeed = ({ newActivity }: { newActivity?: ActivityItem | nul
     const getIcon = (type: string) => {
         switch (type) {
             case 'vote': return <Zap size={14} color="#FFD700" />;
-            case 'identity': return <Shield size={14} color="#00D9FF" />;
-            case 'proposal': return <FileText size={14} color="#A855F7" />;
+            case 'identity': return <Shield size={14} color="#10B981" />;
+            case 'proposal': return <FileText size={14} color="#F59E0B" />;
             case 'delegation': return <User size={14} color="#4ade80" />;
             default: return <Activity size={14} />;
         }
@@ -89,7 +89,7 @@ export const ActivityFeed = ({ newActivity }: { newActivity?: ActivityItem | nul
                             <p>{item.text}</p>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                 <span>{item.time}</span>
-                                {item.txId && (
+                                {item.txId && item.txId.startsWith('at1') && (
                                     <a
                                         href={`https://testnet.explorer.provable.com/transaction/${item.txId}`}
                                         target="_blank"

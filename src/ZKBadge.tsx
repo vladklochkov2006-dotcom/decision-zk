@@ -13,7 +13,7 @@ export const ZKBadge = () => {
                     {/* Left: Badge Card */}
                     <div className="reputation-card">
                         <div className="card-header">
-                            <Shield size={28} color="#00D9FF" />
+                            <Shield size={28} color="#10B981" />
                             <span className="card-title">ZK-Reputation Badge</span>
                         </div>
 
@@ -28,7 +28,7 @@ export const ZKBadge = () => {
 
                             <div className="stat-box">
                                 <div className="stat-icon">
-                                    <TrendingUp size={20} color="#00D9FF" />
+                                    <TrendingUp size={20} color="#10B981" />
                                 </div>
                                 <div className="stat-value">127</div>
                                 <div className="stat-label">Decisions</div>
@@ -36,7 +36,7 @@ export const ZKBadge = () => {
 
                             <div className="stat-box">
                                 <div className="stat-icon">
-                                    <Award size={20} color="#A855F7" />
+                                    <Award size={20} color="#F59E0B" />
                                 </div>
                                 <div className="stat-value">Top 5%</div>
                                 <div className="stat-label">Rank</div>
@@ -58,7 +58,7 @@ export const ZKBadge = () => {
                     {/* Right: Explanation */}
                     <div className="zk-badge-explanation">
                         <div className="explanation-header">
-                            <Eye size={24} color="#00D9FF" />
+                            <Eye size={24} color="#10B981" />
                             <h3>What You See</h3>
                         </div>
                         <p className="explanation-text">
@@ -67,7 +67,7 @@ export const ZKBadge = () => {
                         </p>
 
                         <div className="explanation-header" style={{ marginTop: '30px' }}>
-                            <EyeOff size={24} color="#A855F7" />
+                            <EyeOff size={24} color="#F59E0B" />
                             <h3>What Stays Private</h3>
                         </div>
                         <p className="explanation-text">

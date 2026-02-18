@@ -59,7 +59,7 @@ const ZKDiagram = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1.2, duration: 0.5 }}
             >
-                <div className="node-icon active" style={{ borderColor: '#A855F7', color: '#A855F7' }}>
+                <div className="node-icon active" style={{ borderColor: '#F59E0B', color: '#F59E0B' }}>
                     <FileText size={28} />
                 </div>
                 <div className="node-label">ZK-Proof<br /><span style={{ fontSize: '0.7rem', opacity: 0.6 }}>(Publicly Verifiable)</span></div>
@@ -114,7 +114,7 @@ const TypewriterCode = ({ code, delay = 15 }: { code: string; delay?: number }) 
             <motion.span
                 animate={{ opacity: [1, 0] }}
                 transition={{ repeat: Infinity, duration: 0.8 }}
-                style={{ borderLeft: '2px solid #00D9FF', marginLeft: '2px' }}
+                style={{ borderLeft: '2px solid #10B981', marginLeft: '2px' }}
             >
                 &nbsp;
             </motion.span>
@@ -142,7 +142,7 @@ const faqCategories: FAQCategory[] = [
         title: 'ZK Basics',
         description: 'Learn about zero-knowledge proofs, privacy, and cryptographic fundamentals',
         icon: BookOpen,
-        color: '#00D9FF',
+        color: '#10B981',
         questions: [
             {
                 id: 'what-is-zk',
@@ -214,7 +214,7 @@ const faqCategories: FAQCategory[] = [
         title: 'Voting Guide',
         description: 'Step-by-step instructions for casting votes, earning reputation, and participating',
         icon: Vote,
-        color: '#A855F7',
+        color: '#F59E0B',
         questions: [
             {
                 id: 'how-to-vote',
@@ -230,8 +230,8 @@ const faqCategories: FAQCategory[] = [
                         }}
                     >
                         {[
-                            { color: '#00D9FF', text: 'Connect Wallet' },
-                            { color: '#A855F7', text: 'Select Option' },
+                            { color: '#10B981', text: 'Connect Wallet' },
+                            { color: '#F59E0B', text: 'Select Option' },
                             { color: '#00ff88', text: 'Generate ZK Proof' },
                             { color: '#ffffff', text: 'Submit On-Chain' }
                         ].map((step, idx) => (
@@ -307,7 +307,7 @@ const faqCategories: FAQCategory[] = [
                                 initial={{ scaleX: 0 }}
                                 animate={{ scaleX: 1 }}
                                 transition={{ delay: 0.2, duration: 1 }}
-                                style={{ transformOrigin: 'left', background: 'linear-gradient(90deg, #00D9FF, #A855F7)' }}
+                                style={{ transformOrigin: 'left', background: 'linear-gradient(90deg, #10B981, #F59E0B)' }}
                             />
                             <motion.div className="timeline-item active" variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}>
                                 <div className="point pulse"><Clock size={12} /></div>
@@ -337,7 +337,7 @@ const faqCategories: FAQCategory[] = [
                     <div className="faq-visual-container">
                         <div className="security-lock-visual">
                             <div className="lock-icon-wrapper">
-                                <ShieldCheck size={48} color="#00D9FF" />
+                                <ShieldCheck size={48} color="#10B981" />
                             </div>
                             <div className="lock-text">Vote Immutable</div>
                             <div className="lock-sub">Recorded on Block #1,294,002</div>
@@ -376,7 +376,7 @@ const faqCategories: FAQCategory[] = [
                             </div>
                             <motion.div
                                 className="int-box aleo"
-                                animate={{ boxShadow: ["0 0 0px #00D9FF", "0 0 15px #00D9FF", "0 0 0px #00D9FF"] }}
+                                animate={{ boxShadow: ["0 0 0px #10B981", "0 0 15px #10B981", "0 0 0px #10B981"] }}
                                 transition={{ repeat: Infinity, duration: 3 }}
                             >
                                 <Shield size={20} />
@@ -453,7 +453,7 @@ const faqCategories: FAQCategory[] = [
                                 variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
                             >
                                 <div className="wallet-icon-box">
-                                    <Shield size={24} />
+                                    <img src="/leo-wallet.png" alt="Leo Wallet" style={{ width: 32, height: 32, borderRadius: 6 }} />
                                 </div>
                                 <span>Leo Wallet</span>
                                 <div className="status-badge">Supported</div>
@@ -462,8 +462,8 @@ const faqCategories: FAQCategory[] = [
                                 className="wallet-item shield active"
                                 variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
                             >
-                                <div className="wallet-icon-box" style={{ background: 'linear-gradient(135deg, #00D9FF, #A855F7)' }}>
-                                    <ShieldCheck size={24} color="white" />
+                                <div className="wallet-icon-box" style={{ background: 'transparent' }}>
+                                    <img src="/shield-wallet.png" alt="Shield Wallet" style={{ width: 32, height: 32, borderRadius: 6 }} />
                                 </div>
                                 <span>Shield Wallet</span>
                                 <div className="status-badge">Supported</div>

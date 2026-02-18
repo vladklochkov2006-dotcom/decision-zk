@@ -40,7 +40,7 @@ export const ProtocolPillars = () => {
                 <motion.div className="pillars-grid" variants={containerVariants}>
                     <motion.div className="pillar-card" variants={cardVariants}>
                         <div className="pillar-icon">
-                            <Server size={40} color="#00D9FF" />
+                            <Server size={40} color="#10B981" />
                         </div>
                         <h3>Infrastructure</h3>
                         <p>
@@ -52,7 +52,7 @@ export const ProtocolPillars = () => {
 
                     <motion.div className="pillar-card" variants={cardVariants}>
                         <div className="pillar-icon">
-                            <Award size={40} color="#A855F7" />
+                            <Award size={40} color="#F59E0B" />
                         </div>
                         <h3>Meritocracy</h3>
                         <p>

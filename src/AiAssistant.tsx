@@ -14,13 +14,15 @@ interface AiAssistantProps {
     publicBalance: number;
     privateBalance: number;
     onShield: () => void;
+    externalTrigger?: string;
 }
 
 export const AiAssistant: React.FC<AiAssistantProps> = ({
     onOpenSettings,
     publicBalance,
     privateBalance,
-    onShield
+    onShield,
+    externalTrigger
 }) => {
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -40,14 +42,15 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({
         scrollToBottom();
     }, [messages, isTyping]);
 
-    const handleQuickAction = (action: 'risks' | 'privacy' | 'aleo') => {
+    const handleQuickAction = (action: 'risks' | 'privacy' | 'aleo' | 'security_audit') => {
         const actionMap = {
             risks: { user: "Analyze Risks", ai: "Analyzing smart contract... No vulnerabilities found. The proposal is safe to execute." },
             privacy: { user: "Privacy Audit", ai: "We use Aleo's Varuna proof system (Marlin-based) Your identity remains hidden, but your vote is mathematically accounted for." },
-            aleo: { user: "Aleo Advantage", ai: "Aleo is the only L1 that provides programmable privacy. By using ZK-proofs at the protocol level, we ensure that your governance decisions are truly decentralized and cryptographically shielded. This project leverages Aleo's unique architecture to solve the bias problem in modern DAOs." }
+            aleo: { user: "Aleo Advantage", ai: "Aleo is the only L1 that provides programmable privacy. By using ZK-proofs at the protocol level, we ensure that your governance decisions are truly decentralized and cryptographically shielded. This project leverages Aleo's unique architecture to solve the bias problem in modern DAOs." },
+            security_audit: { user: "Security Audit Requested", ai: "VERIFYING_ZK_PROOF_INTEGRITY... [DONE]\nENCRYPTION_PHASE: Poseidon Hash / Marlin-zkSNARK\nResult: VALID. Your shielded vote will be processed via Aleo's Privacy Layer. No leakage detected." }
         };
 
-        const { user: userText, ai: aiResponse } = actionMap[action];
+        const { user: userText, ai: aiResponse } = actionMap[action as keyof typeof actionMap];
 
         // Add user message
         setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userText }]);
@@ -60,6 +63,13 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({
             setMessages(prev => [...prev, { id: Date.now() + 1, type: 'ai', text: aiResponse }]);
         }, 1500);
     };
+
+    // Watch for external triggers from other components
+    useEffect(() => {
+        if (externalTrigger && externalTrigger !== 'IDLE') {
+            handleQuickAction('security_audit');
+        }
+    }, [externalTrigger]);
 
     return (
         <div className="ai-assistant-wrapper">

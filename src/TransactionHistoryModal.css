@@ -49,7 +49,7 @@
     overflow-y: auto;
     flex: 1;
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 217, 255, 0.2) transparent;
+    scrollbar-color: rgba(16, 185, 129, 0.2) transparent;
 }
 
 .modal-body::-webkit-scrollbar {
@@ -57,7 +57,7 @@
 }
 
 .modal-body::-webkit-scrollbar-thumb {
-    background: rgba(0, 217, 255, 0.2);
+    background: rgba(16, 185, 129, 0.2);
     border-radius: 10px;
 }
 
@@ -103,7 +103,7 @@
     align-items: center;
     gap: 10px;
     font-family: 'Space Mono', monospace;
-    color: #00d9ff;
+    color: #10B981;
     font-size: 0.85rem;
 }
 
@@ -142,20 +142,20 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: #00d9ff;
+    color: #10B981;
     text-decoration: none;
     font-size: 0.8rem;
     font-weight: 600;
     padding: 8px 14px;
     border-radius: 8px;
-    background: rgba(0, 217, 255, 0.08);
-    border: 1px solid rgba(0, 217, 255, 0.15);
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.15);
     transition: all 0.3s;
 }
 
 .explorer-link:hover {
-    background: rgba(0, 217, 255, 0.15);
-    border-color: #00d9ff;
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10B981;
     transform: translateY(-1px);
 }
 
@@ -187,13 +187,14 @@
 
 .copy-icon-btn:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: #00d9ff;
+    color: #10B981;
 }
 
+
 .refresh-btn {
-    background: rgba(0, 217, 255, 0.1);
-    border: 1px solid rgba(0, 217, 255, 0.2);
-    color: #00d9ff;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #10B981;
     cursor: pointer;
     padding: 8px;
     display: flex;
@@ -204,8 +205,8 @@
 }
 
 .refresh-btn:hover {
-    background: rgba(0, 217, 255, 0.2);
-    border-color: #00d9ff;
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10B981;
 }
 
 .close-btn {
@@ -225,6 +226,14 @@
     background: rgba(255, 68, 68, 0.1);
     border-color: rgba(255, 68, 68, 0.2);
     color: #ff4444;
+}
+
+
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .spin-icon {

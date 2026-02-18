@@ -2,16 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useWallet } from "@demox-labs/aleo-wallet-adapter-react";
 import {
     Settings as SettingsIcon,
-    ExternalLink,
-
-    ChevronDown,
-    Copy,
-    Check,
     Shield,
     RefreshCcw,
     Lock,
-    ShieldCheck
+    ShieldCheck,
+    ChevronDown,
+    Check,
+    Copy,
+    ExternalLink
 } from 'lucide-react';
+import { PrivacySensitive } from "./contexts/PrivacyContext";
 import './WalletMenu.css';
 
 interface WalletMenuProps {
@@ -33,9 +33,9 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isShielding, setIsShielding] = useState(false);
 
-    // Simulated state (prioritize external if provided)
-    const [localPublicBalance, setLocalPublicBalance] = useState(5.77);
-    const [localPrivateBalance, setLocalPrivateBalance] = useState(0.00);
+    // Simulated state (initially 0, will be updated from props/wallet)
+    const [localPublicBalance] = useState(0.00);
+    const [localPrivateBalance] = useState(0.00);
 
     const publicBalance = externalPublicBalance !== undefined ? externalPublicBalance : localPublicBalance;
     const privateBalance = externalPrivateBalance !== undefined ? externalPrivateBalance : localPrivateBalance;
@@ -79,8 +79,7 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
         }
 
         setTimeout(() => {
-            setLocalPrivateBalance(prev => prev + 5.00);
-            setLocalPublicBalance(prev => Math.max(0, prev - 5.00));
+            // Shielding finalized. We wait for the real balance to sync from the wallet reporter.
             setIsShielding(false);
         }, 2000);
     };
@@ -94,9 +93,13 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="online-indicator"></div>
-                <span className="addr">{truncatedAddress}</span>
+                <PrivacySensitive>
+                    <span className="addr">{truncatedAddress}</span>
+                </PrivacySensitive>
                 <div className="sep"></div>
-                <span className="bal">{(publicBalance + privateBalance).toFixed(2)} ALEO</span>
+                <PrivacySensitive>
+                    <span className="bal">{(publicBalance + privateBalance).toFixed(2)} ALEO</span>
+                </PrivacySensitive>
                 <ChevronDown size={14} className={`arrow ${isOpen ? 'rotated' : ''}`} />
             </button>
 
@@ -107,7 +110,11 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
                         <div className="wallet-header-section">
                             <div className="wallet-brand">
                                 <div className="brand-icon-box">
-                                    {wallet?.adapter.name === 'Shield Wallet' ? '🛡️' : '🦁'}
+                                    {wallet?.adapter.name === 'Shield Wallet' ? (
+                                        <img src="/shield-wallet.png" alt="Shield Wallet" style={{ width: 24, height: 24, borderRadius: 4 }} />
+                                    ) : (
+                                        <img src="/leo-wallet.png" alt="Leo Wallet" style={{ width: 24, height: 24, borderRadius: 4 }} />
+                                    )}
                                 </div>
                                 <div className="brand-meta">
                                     <span className="name">{wallet?.adapter.name || 'Leo Wallet'}</span>
@@ -115,7 +122,9 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
                                 </div>
                             </div>
                             <div className="interactive-address" onClick={handleCopy}>
-                                <code>{address.slice(0, 8)}...{address.slice(-8)}</code>
+                                <PrivacySensitive>
+                                    <code>{address.slice(0, 8)}...{address.slice(-8)}</code>
+                                </PrivacySensitive>
                                 {isCopied ? <Check size={14} className="copy-success" /> : <Copy size={12} className="copy-icon" />}
                             </div>
                         </div>
@@ -129,13 +138,17 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
                                 </button>
                             </div>
                             <div className="total-amount">
-                                {(publicBalance + privateBalance).toLocaleString('uk-UA', { minimumFractionDigits: 2 })} <span className="currency">ALEO</span>
+                                <PrivacySensitive>
+                                    {(publicBalance + privateBalance).toLocaleString('uk-UA', { minimumFractionDigits: 2 })} <span className="currency">ALEO</span>
+                                </PrivacySensitive>
                             </div>
 
                             <div className="balance-row">
                                 <div className="balance-col">
                                     <span className="col-label">Public</span>
-                                    <span className="col-value">{publicBalance.toLocaleString('uk-UA', { minimumFractionDigits: 2 })}</span>
+                                    <PrivacySensitive>
+                                        <span className="col-value">{publicBalance.toLocaleString('uk-UA', { minimumFractionDigits: 2 })}</span>
+                                    </PrivacySensitive>
                                 </div>
                                 <div className="balance-col">
                                     <span className="col-label">Private</span>
@@ -143,12 +156,16 @@ export const WalletMenu: React.FC<WalletMenuProps> = ({
                                         {privateBalance > 0 ? (
                                             <>
                                                 <Shield size={12} className="lock-icon green" />
-                                                <span>{privateBalance.toLocaleString('uk-UA', { minimumFractionDigits: 2 })}</span>
+                                                <PrivacySensitive>
+                                                    <span>{privateBalance.toLocaleString('uk-UA', { minimumFractionDigits: 2 })}</span>
+                                                </PrivacySensitive>
                                             </>
                                         ) : (
                                             <>
                                                 <Lock size={12} className="lock-icon" />
-                                                <span className="dim">0.00</span>
+                                                <PrivacySensitive>
+                                                    <span className="dim">0.00</span>
+                                                </PrivacySensitive>
                                             </>
                                         )}
                                     </div>

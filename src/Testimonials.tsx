@@ -73,7 +73,7 @@ export const Testimonials = () => {
                             variants={cardVariants}
                         >
                             <div className="quote-icon">
-                                <Quote size={24} color="#00D9FF" />
+                                <Quote size={24} color="#10B981" />
                             </div>
                             <p className="testimonial-quote">"{testimonial.quote}"</p>
                             <div className="testimonial-author">

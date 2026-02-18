@@ -1,135 +1,100 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, ExternalLink, Copy, Check, CheckCircle, RefreshCw, Loader2 } from 'lucide-react';
-import { supabase } from './supabaseClient';
+import { X, Copy, Check, CheckCircle, RefreshCw, Loader2 } from 'lucide-react';
 import './TransactionHistoryModal.css';
 
+
 export interface TransactionRecord {
-    id: string; // was txId in localStorage
+    id: string;
     status: string;
     method: string;
     created_at: string;
+    address?: string; // New: owner address
+    programId?: string; // New: program name
+    type?: string; // New: action type
 }
 
 interface TransactionHistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
     pendingItems?: TransactionRecord[];
+    walletAddress: string | null;
 }
 
-export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = ({ isOpen, onClose, pendingItems = [] }) => {
+export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = ({
+    isOpen, onClose, pendingItems = [], walletAddress
+}) => {
     const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     // Initial Fetch
     const fetchTransactions = async () => {
-        setIsLoading(true);
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching transactions:', error);
-        } else {
-            const fetched = data || [];
-            const now = Date.now();
-            const STALE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-
-            // Identification of stale transactions
-            const staleTransactions = fetched.filter(tx =>
-                (tx.status === 'Pending' || tx.status === 'Processing...') &&
-                (now - new Date(tx.created_at).getTime() > STALE_TIMEOUT)
-            );
-
-            if (staleTransactions.length > 0) {
-                // Batch update stale transactions to 'Failed'
-                // console.log(`Found ${staleTransactions.length} stale transactions. Expiring them...`);
-
-                const staleIds = staleTransactions.map(t => t.id);
-
-                // Update local state first for immediate feedback
-                const updatedData = fetched.map(tx =>
-                    staleIds.includes(tx.id) ? { ...tx, status: 'Failed' } : tx
-                );
-                setTransactions(updatedData);
-
-                // Update Supabase in background
-                await supabase
-                    .from('transactions')
-                    .update({ status: 'Failed' })
-                    .in('id', staleIds);
-            } else {
-                setTransactions(fetched);
-            }
+        if (!walletAddress) {
+            setTransactions([]);
+            return;
         }
+
+        setIsLoading(true);
+
+        // Fetch from LocalStorage (scoped by address)
+        const localKey = `tx_history_${walletAddress}`;
+        const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
+
+        const now = Date.now();
+        const STALE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+
+        // Expire stale items
+        const updatedData = localData.map((tx: any) => {
+            const isPending = tx.status === 'Pending' || tx.status === 'Processing...';
+            const isStale = (now - new Date(tx.created_at).getTime() > STALE_TIMEOUT);
+            if (isPending && isStale) {
+                return { ...tx, status: 'Failed' };
+            }
+            return tx;
+        });
+
+        // Filter out irrelevant programs (safety check for local data)
+        const finalData = updatedData.filter((tx: any) => tx.programId === 'private_decision_v5.aleo');
+
+        setTransactions(finalData);
         setIsLoading(false);
     };
+
+
 
     useEffect(() => {
         if (isOpen) {
             fetchTransactions();
-
-            // Subscribe to realtime changes
-            const channel = supabase
-                .channel('schema-db-changes')
-                .on(
-                    'postgres_changes',
-                    {
-                        event: '*', // Listen to INSERT and UPDATE
-                        schema: 'public',
-                        table: 'transactions',
-                    },
-                    (payload) => {
-                        // console.log('Realtime update:', payload);
-                        // Optimistically update or refetch
-                        // For simplicity and accuracy, let's refetch (or manually merge)
-                        if (payload.eventType === 'INSERT') {
-                            setTransactions((prev) => [payload.new as TransactionRecord, ...prev]);
-                        } else if (payload.eventType === 'UPDATE') {
-                            setTransactions((prev) =>
-                                prev.map((tx) =>
-                                    tx.id === (payload.new as TransactionRecord).id ? (payload.new as TransactionRecord) : tx
-                                )
-                            );
-                        }
-                    }
-                )
-                .subscribe();
-
-            return () => {
-                supabase.removeChannel(channel);
-            };
         }
-    }, [isOpen]);
+    }, [isOpen, walletAddress]);
 
-    // List ALL transactions (pending + DB)
+    // Reset on wallet change
+    useEffect(() => {
+        setTransactions([]);
+    }, [walletAddress]);
+
+    // List ALL transactions (pending + DB + Local)
     const displayTransactions = React.useMemo(() => {
-        const dbMap = new Map(transactions.map(t => [t.id, t]));
+        const pendingMap = new Map(pendingItems.map(p => [p.id, p]));
+        const dbIds = new Set(transactions.map(t => t.id));
 
-        // Create a merged list
-        const merged = [...transactions];
+        // Use DB transactions as base, but override with pending data if it's more "terminal" (Success/Failed)
+        const merged = transactions.map(tx => {
+            const pending = pendingMap.get(tx.id);
+            if (pending && (pending.status === 'Success' || pending.status === 'Failed')) {
+                return { ...tx, status: pending.status };
+            }
+            return tx;
+        });
 
+        // Add pending items that aren't in DB yet
         pendingItems.forEach(p => {
-            const dbItem = dbMap.get(p.id);
-            const pStatus = p.status?.toLowerCase();
-            const dbStatus = dbItem?.status?.toLowerCase();
-
-            if (!dbItem) {
-                // Not in DB yet, show as-is (usually Pending)
+            if (!dbIds.has(p.id)) {
                 merged.push(p);
-            } else if (pStatus === 'success' && dbStatus === 'pending') {
-                // Demo Mode: Local state reached Success before DB, override for UI!
-                const index = merged.findIndex(m => m.id === p.id);
-                if (index !== -1) {
-                    // console.log(`[Demo Mode] UI Override: Local Success for ${p.id}`);
-                    merged[index] = { ...dbItem, status: 'Success' };
-                }
             }
         });
 
-        // Sort by time (newest first)
         return merged.sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -176,8 +141,8 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
                 <div className="modal-body">
                     {displayTransactions.length === 0 ? (
                         <div className="empty-state">
-                            <p>No confirmed transactions found yet.</p>
-                            <span className="wait-text">Transactions will appear here in 1-2 minutes.</span>
+                            <p>No transactions found for this account.</p>
+                            <span className="wait-text">Perform an action to see it here.</span>
                         </div>
                     ) : (
                         <table className="tx-table">
@@ -187,12 +152,11 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
                                     <th>Method</th>
                                     <th>Time</th>
                                     <th>Status</th>
-                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {displayTransactions.map((tx) => (
-                                    <tr key={tx.id} className={pendingItems.some(p => p.id === tx.id) ? 'pending-row' : ''}>
+                                    <tr key={tx.id} className={tx.status === 'Pending' ? 'pending-row' : ''}>
                                         <td>
                                             <div className="tx-hash-cell">
                                                 <span className="hash-text">{formatTxId(tx.id)}</span>
@@ -205,27 +169,11 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
                                         <td className="time-cell">{formatTime(tx.created_at)}</td>
                                         <td>
                                             <span className={`status-badge ${tx.status ? tx.status.toLowerCase() : 'unknown'}`}>
-                                                {tx.status === 'Pending' || tx.status === 'Processing...' ? <Loader2 className="spin-icon" size={12} /> :
+                                                {tx.status === 'Pending' || tx.status === 'Processing...' || tx.status === 'Broadcasted' ? <Loader2 className="spin-icon" size={12} /> :
                                                     tx.status === 'Success' || tx.status === 'Settled' || tx.status === 'Finalized' ? <CheckCircle size={12} /> :
                                                         tx.status === 'Failed' ? <X size={12} /> : null}
                                                 {tx.status}
                                             </span>
-                                        </td>
-                                        <td>
-                                            {(tx.status === 'Success' || tx.status === 'Settled' || tx.status === 'Finalized') ? (
-                                                <a
-                                                    href="https://testnet.explorer.provable.com/program/v_klochkov_private_decision_v1.aleo"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="explorer-link"
-                                                >
-                                                    View <ExternalLink size={12} />
-                                                </a>
-                                            ) : tx.status === 'Failed' ? (
-                                                <span className="wait-text" style={{ color: '#ff4444' }}>Failed</span>
-                                            ) : (
-                                                <span className="wait-text">Processing...</span>
-                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -237,3 +185,4 @@ export const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = (
         </div>
     );
 };
+

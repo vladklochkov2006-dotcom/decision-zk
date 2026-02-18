@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { Lock, Eye, EyeOff, Copy, Check, ExternalLink } from 'lucide-react';
+import { Lock, Eye, EyeOff, Check } from 'lucide-react';
 import './VoteConfirmation.css';
 
 interface VoteConfirmationProps {
     choice: string;
     txId?: string;
     onRetry?: () => void;
-    onManualIdEntered?: (id: string) => void;
-    userAddress?: string;
 }
 
-export const VoteConfirmation: React.FC<VoteConfirmationProps> = ({ choice, txId, onRetry, onManualIdEntered, userAddress }) => {
+export const VoteConfirmation: React.FC<VoteConfirmationProps> = ({ choice, txId, onRetry }) => {
     const [showProof, setShowProof] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -82,22 +80,12 @@ export const VoteConfirmation: React.FC<VoteConfirmationProps> = ({ choice, txId
                 )}
             </div>
 
-            {txId && (
-                <a
-                    href={`https://testnet.explorer.provable.com/program/v_klochkov_private_decision_v1.aleo`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="view-proof-btn"
-                    style={{ marginTop: '10px', justifyContent: 'center', width: '100%' }}
-                >
-                    <ExternalLink size={14} /> View on Explorer
-                </a>
-            )}
-
-            {/* Try Again Button */}
-            <button className="try-again-btn" onClick={onRetry} disabled={!onRetry}>
-                Try Again
-            </button>
+            {/* Action Button */}
+            <div className="conf-actions-centered">
+                <button className="try-again-btn-refined" onClick={onRetry} disabled={!onRetry}>
+                    Try Again
+                </button>
+            </div>
         </div>
     );
 };
